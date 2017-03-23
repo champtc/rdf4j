@@ -67,6 +67,8 @@
 							javax.*;resolution:=optional,
 							org.apache.*;version=0;resolution:=optional,
 							org.springframework.*;resolution:=optional,
+							ch.qos.logback.*;version=0,
+							com.google.common.*;version=0,
 							*
 						</Import-Package>
 						<Include-Resource>
