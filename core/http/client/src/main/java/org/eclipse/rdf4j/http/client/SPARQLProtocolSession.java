@@ -719,6 +719,9 @@ public class SPARQLProtocolSession implements HttpClientDependent {
 
 		queryParams.add(new BasicNameValuePair(Protocol.INCLUDE_INFERRED_PARAM_NAME,
 				Boolean.toString(includeInferred)));
+        //stardog v5
+        queryParams.add(new BasicNameValuePair("reasoning",
+				Boolean.toString(includeInferred)));
 
 		if (maxQueryTime > 0) {
 			queryParams.add(
