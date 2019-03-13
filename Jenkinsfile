@@ -50,6 +50,14 @@ node {
 					checkout scm
 				}
 				
+				stage('Setup Build') {
+					env.JAVA_HOME = tool 'JDK_1.8'
+					env.WORKSPACE = pwd()
+					workingFolder = pwd()
+					
+					properties([[$class: 'BuildDiscarderProperty', strategy: [$class: 'LogRotator', artifactDaysToKeepStr: '90', artifactNumToKeepStr: '2', daysToKeepStr: '', numToKeepStr: '']]])	
+				}
+				
 				stage('Build RDF4J') {
 					if (isUnix()) {
 						sh "cd ${workingFolder}\n${mvnhome}/bin/mvn clean install -DskipTests=true"
