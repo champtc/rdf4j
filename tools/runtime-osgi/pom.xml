@@ -8,10 +8,6 @@
 		<artifactId>rdf4j-tools</artifactId>
 		<version>3.0.2-SNAPSHOT</version>
 	</parent>
-	<properties>
-		<bundle.version>3.0.102</bundle.version>
-		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
-	</properties>	
 
 	<artifactId>rdf4j-runtime-osgi</artifactId>
 	<packaging>bundle</packaging>
@@ -25,6 +21,8 @@
 		<serviceresources.raw.jar>${serviceresources.raw.dir}/raw-service-resources.jar</serviceresources.raw.jar>
 		<serviceresources.fixed.dir>${serviceresources.basedir}/fixed</serviceresources.fixed.dir>
 		<jarToEnhance>${project.build.directory}/${project.artifactId}-${project.version}.jar</jarToEnhance>
+		<bundle.version>3.0.102</bundle.version>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 	</properties>
 
 	<dependencies>
