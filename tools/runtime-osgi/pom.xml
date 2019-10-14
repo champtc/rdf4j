@@ -8,7 +8,7 @@
 		<artifactId>rdf4j-tools</artifactId>
 		<version>3.0.2-SNAPSHOT</version>
 	</parent>
-
+	
 	<artifactId>rdf4j-runtime-osgi</artifactId>
 	<packaging>bundle</packaging>
 
@@ -16,13 +16,13 @@
 	<description>OSGi Runtime dependencies for an RDF4J application</description>
 
 	<properties>
+		<bundle.version>3.0.102</bundle.version>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>	
 		<serviceresources.basedir>${project.build.directory}/serviceResources</serviceresources.basedir>
 		<serviceresources.raw.dir>${serviceresources.basedir}/raw</serviceresources.raw.dir>
 		<serviceresources.raw.jar>${serviceresources.raw.dir}/raw-service-resources.jar</serviceresources.raw.jar>
 		<serviceresources.fixed.dir>${serviceresources.basedir}/fixed</serviceresources.fixed.dir>
 		<jarToEnhance>${project.build.directory}/${project.artifactId}-${project.version}.jar</jarToEnhance>
-		<bundle.version>3.0.102</bundle.version>
-		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
 	</properties>
 
 	<dependencies>
