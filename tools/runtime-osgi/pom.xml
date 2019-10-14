@@ -8,6 +8,10 @@
 		<artifactId>rdf4j-tools</artifactId>
 		<version>3.0.2-SNAPSHOT</version>
 	</parent>
+	<properties>
+		<bundle.version>3.0.102</bundle.version>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+	</properties>	
 
 	<artifactId>rdf4j-runtime-osgi</artifactId>
 	<packaging>bundle</packaging>
