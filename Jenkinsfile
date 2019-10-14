@@ -70,19 +70,19 @@ node {
 					recordIssues enabledForFailure: true, tools: [eclipse(), taskScanner(highTags: 'FIXME', ignoreCase: true, includePattern: '**/plugins/**/*.java,', lowTags: 'XXX', normalTags: 'TODO')]
 				}
 				
-				stage('Build DarkLight Core') {
-					try {
-						build job: "thirdparty/lib/develop", quietPeriod: 15, wait: false
-					} catch (Exception ex) {
-						echo "Failed to trigger darklight build: thirdparty/lib/develop"
-					}
-					
-					try {
-						build job: "thirdparty/lib/master", quietPeriod: 15, wait: false
-					} catch (Exception ex) {
-						echo "Failed to trigger darklight build: thirdparty/lib/master"
-					}
-				}				
+				//stage('Build DarkLight Core') {
+				//	try {
+				//		build job: "thirdparty/lib/develop", quietPeriod: 15, wait: false
+				//	} catch (Exception ex) {
+				//		echo "Failed to trigger darklight build: thirdparty/lib/develop"
+				//	}
+				//	
+				//	try {
+				//		build job: "thirdparty/lib/master", quietPeriod: 15, wait: false
+				//	} catch (Exception ex) {
+				//		echo "Failed to trigger darklight build: thirdparty/lib/master"
+				//	}
+				//}				
 			}
 			milestone()
 		}
