@@ -9,6 +9,7 @@ package org.eclipse.rdf4j.sail;
 
 import static org.junit.Assert.fail;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -17,17 +18,15 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import org.eclipse.rdf4j.common.iteration.Iterations;
+import org.eclipse.rdf4j.model.Model;
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
-import org.eclipse.rdf4j.repository.sail.SailRepository;
 import org.eclipse.rdf4j.repository.util.RepositoryUtil;
 import org.eclipse.rdf4j.rio.RDFFormat;
 import org.eclipse.rdf4j.rio.RDFWriter;
 import org.eclipse.rdf4j.rio.Rio;
-import org.eclipse.rdf4j.sail.Sail;
-import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -36,11 +35,9 @@ import org.slf4j.LoggerFactory;
 public abstract class InferencingTest {
 
 	private static final Logger logger = LoggerFactory.getLogger(InferencingTest.class);
-	
+
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -54,17 +51,14 @@ public abstract class InferencingTest {
 	 * Methods *
 	 *---------*/
 
-	public void runTest(Sail sailStack, String subdir, String testName, boolean isPositiveTest)
-		throws Exception
-	{
+	public void runTest(String subdir, String testName, boolean isPositiveTest) throws Exception {
 		final String name = subdir + "/" + testName;
 		final String inputData = TEST_DIR_PREFIX + "/" + name + "-in.nt";
 		final String outputData = TEST_DIR_PREFIX + "/" + name + "-out.nt";
 
 		Collection<? extends Statement> entailedStatements = new HashSet<>();
-		Collection<? extends Statement> expectedStatements = null;
 
-		Repository repository = new SailRepository(sailStack);
+		Repository repository = createRepository();
 		repository.initialize();
 
 		try (RepositoryConnection con = repository.getConnection();) {
@@ -81,43 +75,23 @@ public abstract class InferencingTest {
 				con.add(stream, inputData, RDFFormat.NTRIPLES);
 				con.commit();
 
-				entailedStatements = Iterations.addAll(con.getStatements(null, null, null, true),
-						new HashSet<Statement>());
-			}
-			catch (Exception e) {
+				entailedStatements = Iterations.addAll(con.getStatements(null, null, null, true), new HashSet<>());
+			} catch (Exception e) {
 				if (con.isActive()) {
 					con.rollback();
 				}
 				logger.error("exception while uploading input data", e);
 			}
-		}
-		finally {
+		} finally {
 			repository.shutDown();
 		}
 
-		Repository outputRepository = new SailRepository(new MemoryStore());
-		outputRepository.initialize();
-		// Upload output data
-		try (RepositoryConnection con = outputRepository.getConnection();
-				InputStream stream = getClass().getResourceAsStream(outputData);)
-		{
-			try {
-				con.begin();
-				con.add(stream, outputData, RDFFormat.NTRIPLES);
-				con.commit();
+		Model expectedStatements;
 
-				expectedStatements = Iterations.addAll(con.getStatements(null, null, null, false),
-						new HashSet<Statement>());
-			}
-			catch (Exception e) {
-				if (con.isActive()) {
-					con.rollback();
-				}
-				logger.error("exception while uploading output data", e);
-			}
-		}
-		finally {
-			outputRepository.shutDown();
+		// Read output data
+		try (InputStream stream = getClass().getResourceAsStream(outputData)) {
+			expectedStatements = Rio.parse(stream, "",
+					Rio.getParserFormatForFileName(outputData).orElse(RDFFormat.NTRIPLES));
 		}
 
 		// Check whether all expected statements are present in the entailment
@@ -125,31 +99,27 @@ public abstract class InferencingTest {
 		boolean outputEntailed = Models.isSubset(expectedStatements, entailedStatements);
 
 		if (isPositiveTest && !outputEntailed) {
-			Collection<? extends Statement> difference = RepositoryUtil.difference(expectedStatements, entailedStatements);
+			Collection<? extends Statement> difference = RepositoryUtil.difference(expectedStatements,
+					entailedStatements);
 			difference.forEach(System.out::println);
 
-			File dumpFile = dumpStatements(name,
-				difference);
+			File dumpFile = dumpStatements(name, difference);
 
-			fail("Incomplete entailment, difference between expected and entailed dumped to file "
-					+ dumpFile);
-		}
-		else if (!isPositiveTest && outputEntailed) {
+			fail("Incomplete entailment, difference between expected and entailed dumped to file " + dumpFile);
+		} else if (!isPositiveTest && outputEntailed) {
 			File dumpFile = dumpStatements(name, expectedStatements);
 			fail("Erroneous entailment, unexpected statements dumped to file " + dumpFile);
 		}
 	}
 
-	private File dumpStatements(String name, Collection<? extends Statement> statements)
-		throws Exception
-	{
+	private File dumpStatements(String name, Collection<? extends Statement> statements) throws Exception {
 		// Dump results to tmp file for debugging
 		String tmpDir = System.getProperty("java.io.tmpdir");
 		name = name.replace("/", "_");
 		File tmpFile = new File(tmpDir, "junit-" + name + ".nt");
 		tmpFile.createNewFile();
 
-		try (OutputStream export = new FileOutputStream(tmpFile);) {
+		try (OutputStream export = new BufferedOutputStream(new FileOutputStream(tmpFile))) {
 			RDFWriter writer = Rio.createWriter(RDFFormat.NTRIPLES, export);
 
 			writer.startRDF();
@@ -167,159 +137,115 @@ public abstract class InferencingTest {
 	 *----------------*/
 
 	@Test
-	public void testSubClassOf001()
-		throws Exception
-	{
-		runTest(createSail(), "subclassof", "test001", true);
+	public void testSubClassOf001() throws Exception {
+		runTest("subclassof", "test001", true);
 	}
 
 	@Test
-	public void testSubClassOf002()
-		throws Exception
-	{
-		runTest(createSail(), "subclassof", "test002", true);
+	public void testSubClassOf002() throws Exception {
+		runTest("subclassof", "test002", true);
 	}
 
 	@Test
-	public void testSubClassOf003()
-		throws Exception
-	{
-		runTest(createSail(), "subclassof", "test003", true);
+	public void testSubClassOf003() throws Exception {
+		runTest("subclassof", "test003", true);
 	}
 
 	@Test
-	public void testSubClassOfError001()
-		throws Exception
-	{
-		runTest(createSail(), "subclassof", "error001", false);
+	public void testSubClassOfError001() throws Exception {
+		runTest("subclassof", "error001", false);
 	}
 
 	@Test
-	public void testSubPropertyOf001()
-		throws Exception
-	{
-		runTest(createSail(), "subpropertyof", "test001", true);
+	public void testSubPropertyOf001() throws Exception {
+		runTest("subpropertyof", "test001", true);
 	}
 
 	@Test
-	public void testSubPropertyOf002()
-		throws Exception
-	{
-		runTest(createSail(), "subpropertyof", "test002", true);
+	public void testSubPropertyOf002() throws Exception {
+		runTest("subpropertyof", "test002", true);
 	}
 
 	@Test
-	public void testSubPropertyOf003()
-		throws Exception
-	{
-		runTest(createSail(), "subpropertyof", "test003", true);
+	public void testSubPropertyOf003() throws Exception {
+		runTest("subpropertyof", "test003", true);
 	}
 
 	@Test
-	public void testSubPropertyOf004()
-		throws Exception
-	{
-		runTest(createSail(), "subpropertyof", "test004", true);
+	public void testSubPropertyOf004() throws Exception {
+		runTest("subpropertyof", "test004", true);
 	}
 
 	@Test
-	public void testSubPropertyOfError001()
-		throws Exception
-	{
-		runTest(createSail(), "subpropertyof", "error001", false);
+	public void testSubPropertyOfError001() throws Exception {
+		runTest("subpropertyof", "error001", false);
 	}
 
 	@Test
-	public void testDomain001()
-		throws Exception
-	{
-		runTest(createSail(), "domain", "test001", true);
+	public void testDomain001() throws Exception {
+		runTest("domain", "test001", true);
 	}
 
 	@Test
-	public void testDomainError001()
-		throws Exception
-	{
-		runTest(createSail(), "domain", "error001", false);
+	public void testDomainError001() throws Exception {
+		runTest("domain", "error001", false);
 	}
 
 	@Test
-	public void testRange001()
-		throws Exception
-	{
-		runTest(createSail(), "range", "test001", true);
+	public void testRange001() throws Exception {
+		runTest("range", "test001", true);
 	}
 
 	@Test
-	public void testRangeError001()
-		throws Exception
-	{
-		runTest(createSail(), "range", "error001", false);
+	public void testRangeError001() throws Exception {
+		runTest("range", "error001", false);
 	}
 
 	@Test
-	public void testType001()
-		throws Exception
-	{
-		runTest(createSail(), "type", "test001", true);
+	public void testType001() throws Exception {
+		runTest("type", "test001", true);
 	}
 
 	@Test
-	public void testType002()
-		throws Exception
-	{
-		runTest(createSail(), "type", "test002", true);
+	public void testType002() throws Exception {
+		runTest("type", "test002", true);
 	}
 
 	@Test
-	public void testType003()
-		throws Exception
-	{
-		runTest(createSail(), "type", "test003", true);
+	public void testType003() throws Exception {
+		runTest("type", "test003", true);
 	}
 
 	@Test
-	public void testType004()
-		throws Exception
-	{
-		runTest(createSail(), "type", "test004", true);
+	public void testType004() throws Exception {
+		runTest("type", "test004", true);
 	}
 
 	@Test
-	public void testType005()
-		throws Exception
-	{
-		runTest(createSail(), "type", "test005", true);
+	public void testType005() throws Exception {
+		runTest("type", "test005", true);
 	}
 
 	@Test
-	public void testType006()
-		throws Exception
-	{
-		runTest(createSail(), "type", "test006", true);
+	public void testType006() throws Exception {
+		runTest("type", "test006", true);
 	}
 
 	@Test
-	public void testTypeError001()
-		throws Exception
-	{
-		runTest(createSail(), "type", "error001", false);
+	public void testTypeError001() throws Exception {
+		runTest("type", "error001", false);
 	}
 
 	@Test
-	public void testTypeError002()
-		throws Exception
-	{
-		runTest(createSail(), "type", "error002", false);
+	public void testTypeError002() throws Exception {
+		runTest("type", "error002", false);
 	}
-
-
 
 	/**
 	 * Gets an instance of the Sail that should be tested. The returned repository must not be initialized.
 	 * 
 	 * @return an uninitialized Sail.
 	 */
-	protected abstract Sail createSail();
+	protected abstract Repository createRepository();
 
 }

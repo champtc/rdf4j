@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -33,6 +33,8 @@ import org.eclipse.rdf4j.rio.helpers.StatementCollector;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+
+import com.github.jsonldjava.core.JsonLdConsts;
 import com.github.jsonldjava.core.JsonLdError;
 import com.github.jsonldjava.core.JsonLdOptions;
 import com.github.jsonldjava.core.JsonLdProcessor;
@@ -49,47 +51,61 @@ public class JSONLDWriter extends AbstractRDFWriter implements RDFWriter {
 
 	private final StatementCollector statementCollector = new StatementCollector(model);
 
+	private final String baseURI;
+
 	private final Writer writer;
 
 	/**
 	 * Create a SesameJSONLDWriter using a {@link java.io.OutputStream}
-	 * 
-	 * @param outputStream
-	 *        The OutputStream to write to.
+	 *
+	 * @param outputStream The OutputStream to write to.
 	 */
 	public JSONLDWriter(OutputStream outputStream) {
-		this(new BufferedWriter(new OutputStreamWriter(outputStream, Charset.forName("UTF-8"))));
+		this(outputStream, null);
+	}
+
+	/**
+	 * Create a SesameJSONLDWriter using a {@link java.io.OutputStream}
+	 *
+	 * @param outputStream The OutputStream to write to.
+	 */
+	public JSONLDWriter(OutputStream outputStream, String baseURI) {
+		this(new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)), baseURI);
 	}
 
 	/**
 	 * Create a SesameJSONLDWriter using a {@link java.io.Writer}
-	 * 
-	 * @param writer
-	 *        The Writer to write to.
+	 *
+	 * @param writer The Writer to write to.
 	 */
 	public JSONLDWriter(Writer writer) {
+		this(writer, null);
+	}
+
+	/**
+	 * Create a SesameJSONLDWriter using a {@link java.io.Writer}
+	 *
+	 * @param writer  The Writer to write to.
+	 * @param baseURI base URI
+	 */
+	public JSONLDWriter(Writer writer, String baseURI) {
+		this.baseURI = baseURI;
 		this.writer = writer;
 	}
 
 	@Override
-	public void handleNamespace(String prefix, String uri)
-		throws RDFHandlerException
-	{
+	public void handleNamespace(String prefix, String uri) throws RDFHandlerException {
 		model.setNamespace(prefix, uri);
 	}
 
 	@Override
-	public void startRDF()
-		throws RDFHandlerException
-	{
+	public void startRDF() throws RDFHandlerException {
 		statementCollector.clear();
 		model.clear();
 	}
 
 	@Override
-	public void endRDF()
-		throws RDFHandlerException
-	{
+	public void endRDF() throws RDFHandlerException {
 		final JSONLDInternalRDFParser serialiser = new JSONLDInternalRDFParser();
 		try {
 			Object output = JsonLdProcessor.fromRDF(model, serialiser);
@@ -103,6 +119,13 @@ public class JSONLDWriter extends AbstractRDFWriter implements RDFWriter {
 			opts.setUseNativeTypes(getWriterConfig().get(JSONLDSettings.USE_NATIVE_TYPES));
 			// opts.optimize = getWriterConfig().get(JSONLDSettings.OPTIMIZE);
 
+			if (getWriterConfig().get(JSONLDSettings.HIERARCHICAL_VIEW)) {
+				output = JSONLDHierarchicalProcessor.fromJsonLdObject(output);
+			}
+
+			if (baseURI != null && getWriterConfig().get(BasicWriterSettings.BASE_DIRECTIVE)) {
+				opts.setBase(baseURI);
+			}
 			if (mode == JSONLDMode.EXPAND) {
 				output = JsonLdProcessor.expand(output, opts);
 			}
@@ -112,46 +135,37 @@ public class JSONLDWriter extends AbstractRDFWriter implements RDFWriter {
 				output = JsonLdProcessor.flatten(output, inframe, opts);
 			}
 			if (mode == JSONLDMode.COMPACT) {
-				final Map<String, Object> ctx = new LinkedHashMap<String, Object>();
+				final Map<String, Object> ctx = new LinkedHashMap<>();
 				addPrefixes(ctx, model.getNamespaces());
-				final Map<String, Object> localCtx = new HashMap<String, Object>();
-				localCtx.put("@context", ctx);
+				final Map<String, Object> localCtx = new HashMap<>();
+				localCtx.put(JsonLdConsts.CONTEXT, ctx);
 
 				output = JsonLdProcessor.compact(output, localCtx, opts);
 			}
 			if (getWriterConfig().get(BasicWriterSettings.PRETTY_PRINT)) {
 				JsonUtils.writePrettyPrint(writer, output);
-			}
-			else {
+			} else {
 				JsonUtils.write(writer, output);
 			}
 
-		}
-		catch (final JsonLdError e) {
+		} catch (final JsonLdError e) {
 			throw new RDFHandlerException("Could not render JSONLD", e);
-		}
-		catch (final JsonGenerationException e) {
+		} catch (final JsonGenerationException e) {
 			throw new RDFHandlerException("Could not render JSONLD", e);
-		}
-		catch (final JsonMappingException e) {
+		} catch (final JsonMappingException e) {
 			throw new RDFHandlerException("Could not render JSONLD", e);
-		}
-		catch (final IOException e) {
+		} catch (final IOException e) {
 			throw new RDFHandlerException("Could not render JSONLD", e);
 		}
 	}
 
 	@Override
-	public void handleStatement(Statement st)
-		throws RDFHandlerException
-	{
+	public void handleStatement(Statement st) throws RDFHandlerException {
 		statementCollector.handleStatement(st);
 	}
 
 	@Override
-	public void handleComment(String comment)
-		throws RDFHandlerException
-	{
+	public void handleComment(String comment) throws RDFHandlerException {
 	}
 
 	@Override
@@ -159,10 +173,15 @@ public class JSONLDWriter extends AbstractRDFWriter implements RDFWriter {
 		return RDFFormat.JSONLD;
 	}
 
+	/**
+	 * Add name space prefixes to JSON-LD context, empty prefix gets the '@vocab' prefix
+	 * 
+	 * @param ctx        context
+	 * @param namespaces set of RDF name spaces
+	 */
 	private static void addPrefixes(Map<String, Object> ctx, Set<Namespace> namespaces) {
 		for (final Namespace ns : namespaces) {
-			ctx.put(ns.getPrefix(), ns.getName());
+			ctx.put(ns.getPrefix().isEmpty() ? JsonLdConsts.VOCAB : ns.getPrefix(), ns.getName());
 		}
-
 	}
 }

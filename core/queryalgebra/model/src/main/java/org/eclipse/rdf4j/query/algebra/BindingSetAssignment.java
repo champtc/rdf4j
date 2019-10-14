@@ -34,7 +34,7 @@ public class BindingSetAssignment extends AbstractQueryModelNode implements Tupl
 	}
 
 	private Set<String> findBindingNames() {
-		Set<String> result = new HashSet<String>();
+		Set<String> result = new HashSet<>();
 		if (bindingSets != null) {
 			for (BindingSet set : bindingSets) {
 				result.addAll(set.getBindingNames());
@@ -44,9 +44,7 @@ public class BindingSetAssignment extends AbstractQueryModelNode implements Tupl
 	}
 
 	@Override
-	public <X extends Exception> void visit(QueryModelVisitor<X> visitor)
-		throws X
-	{
+	public <X extends Exception> void visit(QueryModelVisitor<X> visitor) throws X {
 		visitor.meet(this);
 	}
 
@@ -62,20 +60,18 @@ public class BindingSetAssignment extends AbstractQueryModelNode implements Tupl
 
 	@Override
 	public BindingSetAssignment clone() {
-		return (BindingSetAssignment)super.clone();
+		return (BindingSetAssignment) super.clone();
 	}
 
 	/**
-	 * @param bindingNames
-	 *        The bindingNames to set if known.
+	 * @param bindingNames The bindingNames to set if known.
 	 */
 	public void setBindingNames(Set<String> bindingNames) {
 		this.bindingNames = bindingNames;
 	}
 
 	/**
-	 * @param bindingSets
-	 *        The bindingSets to set.
+	 * @param bindingSets The bindingSets to set.
 	 */
 	public void setBindingSets(Iterable<BindingSet> bindingSets) {
 		this.bindingSets = bindingSets;

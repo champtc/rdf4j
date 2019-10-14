@@ -32,9 +32,9 @@ public class ConfigTemplate {
 
 	private String template;
 
-	private final Map<String, List<String>> variableMap = new LinkedHashMap<String, List<String>>();
+	private final Map<String, List<String>> variableMap = new LinkedHashMap<>();
 
-	private final Map<String, String> multilineMap = new LinkedHashMap<String, String>();
+	private final Map<String, String> multilineMap = new LinkedHashMap<>();
 
 	/*--------------*
 	 * Constructors *
@@ -75,11 +75,10 @@ public class ConfigTemplate {
 			if (!variableMap.containsKey(var)) {
 				variableMap.put(var, tokens.subList(1, tokens.size()));
 				int start = matcher.start();
-				String before = template.substring(start - 3, start);
+				String before = template.substring(Math.max(start - 3, 0), start);
 				int end = matcher.end();
 				if (("'''".equals(before) || "\"\"\"".equals(before))
-						&& before.equals(template.substring(end, end + 3)))
-				{
+						&& before.equals(template.substring(end, end + 3))) {
 					multilineMap.put(var, before);
 				}
 			}
@@ -105,7 +104,7 @@ public class ConfigTemplate {
 			if (!value.isEmpty() && multilineMap.containsKey(var)) {
 				value = escapeMultilineQuotes(multilineMap.get(var), value);
 			}
-			matcher.appendReplacement(result, value);
+			matcher.appendReplacement(result, Matcher.quoteReplacement(value));
 		}
 		matcher.appendTail(result);
 		return result.toString();
@@ -114,18 +113,14 @@ public class ConfigTemplate {
 	/**
 	 * Escape Turtle multiline literal quote characters in the given value.
 	 * 
-	 * @param quoteVariant
-	 *        either ''' or """
-	 * @param value
-	 *        the value to escape properly
+	 * @param quoteVariant either ''' or """
+	 * @param value        the value to escape properly
 	 * @return the value with any needed multiline quote sequences escaped
 	 */
 	protected static String escapeMultilineQuotes(String quoteVariant, String value) {
 		if ("'''".equals(quoteVariant) || "\"\"\"".equals(quoteVariant)) {
-			return value.replace(quoteVariant,
-					new String(new char[3]).replace("\0", "\\" + quoteVariant.charAt(0)));
-		}
-		else {
+			return value.replace(quoteVariant, new String(new char[3]).replace("\0", "\\" + quoteVariant.charAt(0)));
+		} else {
 			throw new IllegalArgumentException("Only a valid Turtle multi-line quote delmiter is allowed.");
 		}
 	}

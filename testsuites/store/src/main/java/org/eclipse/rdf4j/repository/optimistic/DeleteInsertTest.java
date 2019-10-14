@@ -24,9 +24,7 @@ import org.junit.Test;
 public class DeleteInsertTest {
 
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -41,29 +39,22 @@ public class DeleteInsertTest {
 	private ClassLoader cl = getClass().getClassLoader();
 
 	@Before
-	public void setUp()
-		throws Exception
-	{
+	public void setUp() throws Exception {
 		repo = OptimisticIsolationTest.getEmptyInitializedRepository(DeleteInsertTest.class);
 		con = repo.getConnection();
 	}
 
 	@After
-	public void tearDown()
-		throws Exception
-	{
+	public void tearDown() throws Exception {
 		try {
 			con.close();
-		}
-		finally {
+		} finally {
 			repo.shutDown();
 		}
 	}
 
 	@Test
-	public void test()
-		throws Exception
-	{
+	public void test() throws Exception {
 		String load = IOUtil.readString(cl.getResource("test/insert-data.ru"));
 		con.prepareUpdate(QueryLanguage.SPARQL, load, NS).execute();
 		con.begin(level);

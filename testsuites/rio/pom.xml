@@ -1,11 +1,13 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.eclipse.rdf4j</groupId>
 		<artifactId>rdf4j-testsuites</artifactId>
-		<version>2.3-SNAPSHOT</version>
+		<version>3.0.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>rdf4j-rio-testsuite</artifactId>
@@ -13,21 +15,19 @@
 	<name>RDF4J Rio compliance test suite</name>
 	<description>Test suite for Rio</description>
 
+	<properties>
+		<rdf4j.memorystore.version>2.5.0</rdf4j.memorystore.version>
+	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>rdf4j-runtime</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
 			<artifactId>rdf4j-repository-sail</artifactId>
-			<version>${project.version}</version>
+			<version>${rdf4j.memorystore.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>rdf4j-sail-memory</artifactId>
-			<version>${project.version}</version>
+			<version>${rdf4j.memorystore.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -56,6 +56,11 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>

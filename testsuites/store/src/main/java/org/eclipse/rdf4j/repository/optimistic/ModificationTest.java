@@ -27,9 +27,7 @@ import org.junit.Test;
 public class ModificationTest {
 
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -46,9 +44,7 @@ public class ModificationTest {
 	private IRI PICASSO;
 
 	@Before
-	public void setUp()
-		throws Exception
-	{
+	public void setUp() throws Exception {
 		repo = OptimisticIsolationTest.getEmptyInitializedRepository(ModificationTest.class);
 		ValueFactory uf = repo.getValueFactory();
 		PAINTER = uf.createIRI(NS, "Painter");
@@ -57,21 +53,16 @@ public class ModificationTest {
 	}
 
 	@After
-	public void tearDown()
-		throws Exception
-	{
+	public void tearDown() throws Exception {
 		try {
 			con.close();
-		}
-		finally {
+		} finally {
 			repo.shutDown();
 		}
 	}
 
 	@Test
-	public void testAdd()
-		throws Exception
-	{
+	public void testAdd() throws Exception {
 		con.begin(level);
 		con.add(PICASSO, RDF.TYPE, PAINTER);
 		con.commit();
@@ -79,9 +70,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testAutoCommit()
-		throws Exception
-	{
+	public void testAutoCommit() throws Exception {
 		con.add(PICASSO, RDF.TYPE, PAINTER);
 		con.close();
 		con = repo.getConnection();
@@ -89,9 +78,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testInsertData()
-		throws Exception
-	{
+	public void testInsertData() throws Exception {
 		con.begin(level);
 		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <picasso> a <Painter> }", NS).execute();
 		con.commit();
@@ -99,9 +86,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testInsertDataAutoCommit()
-		throws Exception
-	{
+	public void testInsertDataAutoCommit() throws Exception {
 		con.prepareUpdate(QueryLanguage.SPARQL, "INSERT DATA { <picasso> a <Painter> }", NS).execute();
 		con.close();
 		con = repo.getConnection();
@@ -109,9 +94,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testRemove()
-		throws Exception
-	{
+	public void testRemove() throws Exception {
 		con.begin(level);
 		con.add(PICASSO, RDF.TYPE, PAINTER);
 		con.commit();
@@ -122,9 +105,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testAddIn()
-		throws Exception
-	{
+	public void testAddIn() throws Exception {
 		con.begin(level);
 		con.add(PICASSO, RDF.TYPE, PAINTER, PICASSO);
 		con.commit();
@@ -132,9 +113,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testRemoveFrom()
-		throws Exception
-	{
+	public void testRemoveFrom() throws Exception {
 		con.begin(level);
 		con.add(PICASSO, RDF.TYPE, PAINTER, PICASSO);
 		con.commit();
@@ -145,9 +124,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testMove()
-		throws Exception
-	{
+	public void testMove() throws Exception {
 		con.begin(level);
 		con.add(PICASSO, RDF.TYPE, PAINTER, PICASSO);
 		con.commit();
@@ -160,9 +137,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testMoveOut()
-		throws Exception
-	{
+	public void testMoveOut() throws Exception {
 		con.begin(level);
 		con.add(PICASSO, RDF.TYPE, PAINTER, PICASSO);
 		con.commit();
@@ -175,9 +150,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testCancel()
-		throws Exception
-	{
+	public void testCancel() throws Exception {
 		con.begin(level);
 		con.add(PICASSO, RDF.TYPE, PAINTER, PICASSO);
 		con.remove(PICASSO, RDF.TYPE, PAINTER, PICASSO);
@@ -186,9 +159,7 @@ public class ModificationTest {
 	}
 
 	@Test
-	public void testRemoveDuplicate()
-		throws Exception
-	{
+	public void testRemoveDuplicate() throws Exception {
 		con.add(PICASSO, RDF.TYPE, PAINTER, PICASSO, PAINTER);
 		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PAINTER));
 		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PICASSO));
@@ -196,13 +167,13 @@ public class ModificationTest {
 		con.remove(PICASSO, RDF.TYPE, PAINTER, PAINTER);
 		assertFalse(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PAINTER));
 		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PICASSO));
-		assertTrue(con.prepareBooleanQuery(QueryLanguage.SPARQL,
-				"ASK {<" + PICASSO + "> a <" + PAINTER + ">}").evaluate());
+		assertTrue(con.prepareBooleanQuery(QueryLanguage.SPARQL, "ASK {<" + PICASSO + "> a <" + PAINTER + ">}")
+				.evaluate());
 		con.commit();
 		assertFalse(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PAINTER));
 		assertTrue(con.hasStatement(PICASSO, RDF.TYPE, PAINTER, false, PICASSO));
-		assertTrue(con.prepareBooleanQuery(QueryLanguage.SPARQL,
-				"ASK {<" + PICASSO + "> a <" + PAINTER + ">}").evaluate());
+		assertTrue(con.prepareBooleanQuery(QueryLanguage.SPARQL, "ASK {<" + PICASSO + "> a <" + PAINTER + ">}")
+				.evaluate());
 	}
 
 }

@@ -11,31 +11,23 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import org.eclipse.rdf4j.common.io.FileUtil;
 import org.eclipse.rdf4j.common.io.IOUtil;
 import org.eclipse.rdf4j.common.iteration.Iterations;
 import org.eclipse.rdf4j.model.Literal;
 import org.eclipse.rdf4j.model.Statement;
-import org.eclipse.rdf4j.model.impl.SimpleIRI;
 import org.eclipse.rdf4j.model.util.Models;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.GraphQueryResult;
 import org.eclipse.rdf4j.query.QueryLanguage;
 import org.eclipse.rdf4j.query.TupleQueryResult;
-import org.eclipse.rdf4j.query.parser.serql.SeRQLUtil;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
@@ -48,6 +40,10 @@ import org.eclipse.rdf4j.sail.inferencer.fc.ForwardChainingRDFSInferencer;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public abstract class SeRQLQueryTestCase extends TestCase {
 
@@ -79,16 +75,15 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 
 	public interface Factory {
 
-		Test createTest(String name, String dataFile, List<String> graphNames, String queryFile,
-				String resultFile, String entailment);
+		Test createTest(String name, String dataFile, List<String> graphNames, String queryFile, String resultFile,
+				String entailment);
 	}
 
 	/**
 	 * Creates a new SeRQL Query test.
 	 */
 	public SeRQLQueryTestCase(String name, String dataFile, List<String> graphNames, String queryFile,
-			String resultFile, String entailment)
-	{
+			String resultFile, String entailment) {
 		super(name);
 
 		this.dataFile = dataFile;
@@ -103,9 +98,7 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 	 *---------*/
 
 	@Override
-	protected void runTest()
-		throws Exception
-	{
+	protected void runTest() throws Exception {
 		String query = readQuery();
 		Repository dataRep = createRepository(entailment);
 
@@ -124,7 +117,7 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 
 		// Evaluate the query on the query data
 		GraphQueryResult result = dataCon.prepareGraphQuery(getQueryLanguage(), query).evaluate();
-		Collection<Statement> actualStatements = Iterations.addAll(result, new ArrayList<Statement>(1));
+		Collection<Statement> actualStatements = Iterations.addAll(result, new ArrayList<>(1));
 		result.close();
 
 		dataCon.close();
@@ -140,8 +133,8 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 		erCon.add(url(resultFile), base(resultFile),
 				Rio.getParserFormatForFileName(resultFile).orElseThrow(Rio.unsupportedFormat(resultFile)));
 
-		Collection<Statement> expectedStatements = Iterations.addAll(
-				erCon.getStatements(null, null, null, false), new ArrayList<Statement>(1));
+		Collection<Statement> expectedStatements = Iterations.addAll(erCon.getStatements(null, null, null, false),
+				new ArrayList<>(1));
 
 		erCon.close();
 		expectedResultRep.shutDown();
@@ -152,8 +145,7 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 			// Found differences between expected and actual results
 			StringBuilder message = new StringBuilder(128);
 
-			Collection<? extends Statement> diff = RepositoryUtil.difference(actualStatements,
-					expectedStatements);
+			Collection<? extends Statement> diff = RepositoryUtil.difference(actualStatements, expectedStatements);
 
 			message.append("\n=======Diff: ");
 			message.append(getName());
@@ -191,14 +183,11 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 
 	}
 
-	protected Repository createRepository(String entailment)
-		throws Exception
-	{
+	protected Repository createRepository(String entailment) throws Exception {
 		Repository dataRep;
 		if ("RDF".equals(entailment)) {
 			dataRep = newRepository();
-		}
-		else {
+		} else {
 			dataRep = newRepository(entailment);
 		}
 		dataRep.initialize();
@@ -206,69 +195,54 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 		try {
 			con.clear();
 			con.clearNamespaces();
-		}
-		finally {
+		} finally {
 			con.close();
 		}
 		return dataRep;
 	}
 
-	protected Repository newRepository()
-		throws Exception
-	{
+	protected Repository newRepository() throws Exception {
 		return new SailRepository(newSail());
 	}
 
-	protected Repository newRepository(String entailment)
-		throws Exception
-	{
+	protected Repository newRepository(String entailment) throws Exception {
 		return new SailRepository(createSail(entailment));
 	}
 
-	protected NotifyingSail createSail(String entailment)
-		throws Exception
-	{
+	protected NotifyingSail createSail(String entailment) throws Exception {
 		NotifyingSail sail = newSail();
 
 		if ("RDF".equals(entailment)) {
 			// do not add inferencers
-		}
-		else if ("RDFS".equals(entailment)) {
+		} else if ("RDFS".equals(entailment)) {
 			sail = new ForwardChainingRDFSInferencer(sail);
-		}
-		else if ("RDFS-VP".equals(entailment)) {
+		} else if ("RDFS-VP".equals(entailment)) {
 			sail = new ForwardChainingRDFSInferencer(sail);
 			sail = new DirectTypeHierarchyInferencer(sail);
-		}
-		else {
+		} else {
 			sail.shutDown();
 			fail("Invalid value for entailment level:" + entailment);
 		}
 		return sail;
 	}
 
-	protected abstract NotifyingSail newSail()
-		throws Exception;
+	protected abstract NotifyingSail newSail() throws Exception;
 
 	protected void discardRepository(Repository rep) {
 		File dataDir = rep.getDataDir();
 		if (dataDir != null && dataDir.isDirectory()) {
 			try {
 				FileUtil.deleteDir(dataDir);
-			}
-			catch (IOException e) {
+			} catch (IOException e) {
 			}
 		}
 	}
 
-	private String readQuery()
-		throws IOException
-	{
+	private String readQuery() throws IOException {
 		InputStream stream = url(queryFile).openStream();
 		try {
-			return IOUtil.readString(new InputStreamReader(stream, "UTF-8"));
-		}
-		finally {
+			return IOUtil.readString(new InputStreamReader(stream, StandardCharsets.UTF_8));
+		} finally {
 			stream.close();
 		}
 	}
@@ -277,9 +251,7 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 	 * Test methods *
 	 *--------------*/
 
-	public static Test suite(Factory factory)
-		throws Exception
-	{
+	public static Test suite(Factory factory) throws Exception {
 		TestSuite suite = new TestSuite(factory.getClass().getName());
 
 		// Read manifest and create declared test cases
@@ -302,19 +274,18 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 		TupleQueryResult tests = con.prepareTupleQuery(QueryLanguage.SERQL, query).evaluate();
 		while (tests.hasNext()) {
 			BindingSet testBindings = tests.next();
-			String testName = ((Literal)testBindings.getValue("testName")).getLabel();
+			String testName = ((Literal) testBindings.getValue("testName")).getLabel();
 			String inputFile = testBindings.getValue("input").toString();
 			String queryFile = testBindings.getValue("query").toString();
 			String resultFile = testBindings.getValue("result").toString();
-			String entailment = ((Literal)testBindings.getValue("entailment")).getLabel();
+			String entailment = ((Literal) testBindings.getValue("entailment")).getLabel();
 
-			query = "SELECT graph " + "FROM {} mf:name {testName}; "
-					+ "        mf:action {} qt:graphData {graph} " + "WHERE testName = \""
-					+ SeRQLUtil.encodeString(testName) + "\" " + "USING NAMESPACE"
+			query = "SELECT graph " + "FROM {} mf:name {testName}; " + "        mf:action {} qt:graphData {graph} "
+					+ "WHERE testName = \"" + SeRQLUtil.encodeString(testName) + "\" " + "USING NAMESPACE"
 					+ "  mf = <http://www.w3.org/2001/sw/DataAccess/tests/test-manifest#>,"
 					+ "  qt = <http://www.w3.org/2001/sw/DataAccess/tests/test-query#>";
 
-			List<String> graphNames = new ArrayList<String>();
+			List<String> graphNames = new ArrayList<>();
 
 			TupleQueryResult graphs = con.prepareTupleQuery(QueryLanguage.SERQL, query).evaluate();
 			while (graphs.hasNext()) {
@@ -327,8 +298,7 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 				logger.error("test-029 SKIPPED in {}", SeRQLQueryTestCase.class.getName());
 				continue;
 			}
-			suite.addTest(
-					factory.createTest(testName, inputFile, graphNames, queryFile, resultFile, entailment));
+			suite.addTest(factory.createTest(testName, inputFile, graphNames, queryFile, resultFile, entailment));
 		}
 
 		tests.close();
@@ -338,36 +308,12 @@ public abstract class SeRQLQueryTestCase extends TestCase {
 		return suite;
 	}
 
-	private static URL url(String uri)
-		throws MalformedURLException
-	{
-		if (!uri.startsWith("injar:"))
-			return new URL(uri);
-		int start = uri.indexOf(':') + 3;
-		int end = uri.indexOf('/', start);
-		String encoded = uri.substring(start, end);
-		try {
-			String jar = URLDecoder.decode(encoded, "UTF-8");
-			return new URL("jar:" + jar + '!' + uri.substring(end));
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+	private static URL url(String uri) throws MalformedURLException {
+		return new URL(uri);
 	}
 
 	private static String base(String uri) {
-		if (!uri.startsWith("jar:"))
-			return uri;
-		int start = uri.indexOf(':') + 1;
-		int end = uri.lastIndexOf('!');
-		String jar = uri.substring(start, end);
-		try {
-			String encoded = URLEncoder.encode(jar, "UTF-8");
-			return "injar://" + encoded + uri.substring(end + 1);
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+		return uri;
 	}
 
 	protected abstract QueryLanguage getQueryLanguage();

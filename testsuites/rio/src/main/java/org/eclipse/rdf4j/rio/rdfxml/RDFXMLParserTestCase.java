@@ -12,15 +12,10 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
-
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import org.apache.xml.security.c14n.CanonicalizationException;
 import org.apache.xml.security.c14n.Canonicalizer;
@@ -46,6 +41,9 @@ import org.eclipse.rdf4j.rio.ntriples.NTriplesParser;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.xml.sax.SAXException;
 
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 /**
  * JUnit test for the RDF/XML parser that uses the test manifest that is available
  * <a href="http://www.w3.org/2000/10/rdf-tests/rdfcore/Manifest.rdf">online</a>.
@@ -62,15 +60,11 @@ public abstract class RDFXMLParserTestCase {
 
 	private static String W3C_MANIFEST_FILE = W3C_TESTS_DIR + "Manifest.rdf";
 
-	private static String OPENRDF_MANIFEST_FILE = LOCAL_TESTS_DIR + "openrdf/Manifest.rdf";
-
 	/*--------------------*
 	 * Static initializer *
 	 *--------------------*/
 
-	public TestSuite createTestSuite()
-		throws Exception
-	{
+	public TestSuite createTestSuite() throws Exception {
 		// Create an RDF repository for the manifest data
 		Repository repository = new SailRepository(new MemoryStore());
 		repository.initialize();
@@ -80,18 +74,12 @@ public abstract class RDFXMLParserTestCase {
 		URL w3cManifest = resolveURL(W3C_MANIFEST_FILE);
 		con.add(w3cManifest, base(W3C_MANIFEST_FILE), RDFFormat.RDFXML);
 
-		// Add our own manifest
-		URL localManifest = resolveURL(OPENRDF_MANIFEST_FILE);
-		con.add(localManifest, base(localManifest.toString()), RDFFormat.RDFXML);
-
 		// Create test suite
 		TestSuite suite = new TestSuite(RDFXMLParserTestCase.class.getName());
 
 		// Add all positive parser tests
-		String query = "select TESTCASE, INPUT, OUTPUT "
-				+ "from {TESTCASE} rdf:type {test:PositiveParserTest}; "
-				+ "                test:inputDocument {INPUT}; "
-				+ "                test:outputDocument {OUTPUT}; "
+		String query = "select TESTCASE, INPUT, OUTPUT " + "from {TESTCASE} rdf:type {test:PositiveParserTest}; "
+				+ "                test:inputDocument {INPUT}; " + "                test:outputDocument {OUTPUT}; "
 				+ "                test:status {\"APPROVED\"} "
 				+ "using namespace test = <http://www.w3.org/2000/10/rdf-tests/rdfcore/testSchema#>";
 		TupleQueryResult queryResult = con.prepareTupleQuery(QueryLanguage.SERQL, query).evaluate();
@@ -107,8 +95,7 @@ public abstract class RDFXMLParserTestCase {
 
 		// Add all negative parser tests
 		query = "select TESTCASE, INPUT " + "from {TESTCASE} rdf:type {test:NegativeParserTest}; "
-				+ "                test:inputDocument {INPUT}; "
-				+ "                test:status {\"APPROVED\"} "
+				+ "                test:inputDocument {INPUT}; " + "                test:status {\"APPROVED\"} "
 				+ "using namespace test = <http://www.w3.org/2000/10/rdf-tests/rdfcore/testSchema#>";
 		queryResult = con.prepareTupleQuery(QueryLanguage.SERQL, query).evaluate();
 		while (queryResult.hasNext()) {
@@ -125,9 +112,7 @@ public abstract class RDFXMLParserTestCase {
 		return suite;
 	}
 
-	private static URL resolveURL(String urlString)
-		throws MalformedURLException
-	{
+	private static URL resolveURL(String urlString) throws MalformedURLException {
 		if (urlString.startsWith(W3C_TESTS_DIR)) {
 			// resolve to local copy
 			urlString = LOCAL_TESTS_DIR + "w3c-approved/" + urlString.substring(W3C_TESTS_DIR.length());
@@ -135,8 +120,7 @@ public abstract class RDFXMLParserTestCase {
 
 		if (urlString.startsWith("/")) {
 			return RDFXMLParserTestCase.class.getResource(urlString);
-		}
-		else {
+		} else {
 			return url(urlString);
 		}
 	}
@@ -172,16 +156,14 @@ public abstract class RDFXMLParserTestCase {
 		 *---------*/
 
 		@Override
-		protected void runTest()
-			throws Exception
-		{
+		protected void runTest() throws Exception {
 			// Parse input data
 			RDFParser rdfxmlParser = createRDFParser();
 			rdfxmlParser.setValueFactory(new CanonXMLValueFactory());
 			rdfxmlParser.getParserConfig().addNonFatalError(BasicParserSettings.FAIL_ON_UNKNOWN_DATATYPES);
 			rdfxmlParser.getParserConfig().addNonFatalError(BasicParserSettings.VERIFY_DATATYPE_VALUES);
 
-			Set<Statement> inputCollection = new LinkedHashSet<Statement>();
+			Set<Statement> inputCollection = new LinkedHashSet<>();
 			StatementCollector inputCollector = new StatementCollector(inputCollection);
 			rdfxmlParser.setRDFHandler(inputCollector);
 
@@ -195,7 +177,7 @@ public abstract class RDFXMLParserTestCase {
 			ntriplesParser.getParserConfig().addNonFatalError(BasicParserSettings.FAIL_ON_UNKNOWN_DATATYPES);
 			ntriplesParser.getParserConfig().addNonFatalError(BasicParserSettings.VERIFY_DATATYPE_VALUES);
 
-			Set<Statement> outputCollection = new LinkedHashSet<Statement>();
+			Set<Statement> outputCollection = new LinkedHashSet<>();
 			StatementCollector outputCollector = new StatementCollector(outputCollection);
 			ntriplesParser.setRDFHandler(outputCollector);
 
@@ -264,11 +246,9 @@ public abstract class RDFXMLParserTestCase {
 				in.close();
 
 				fail("Parser parses erroneous data without reporting errors");
-			}
-			catch (RDFParseException e) {
+			} catch (RDFParseException e) {
 				// This is expected as the input file is incorrect RDF
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				fail("Error: " + e.getMessage());
 			}
 		}
@@ -279,9 +259,7 @@ public abstract class RDFXMLParserTestCase {
 
 		private Canonicalizer c14n;
 
-		public CanonXMLValueFactory()
-			throws InvalidCanonicalizerException, ParserConfigurationException
-		{
+		public CanonXMLValueFactory() throws InvalidCanonicalizerException, ParserConfigurationException {
 			org.apache.xml.security.Init.init();
 
 			c14n = Canonicalizer.getInstance(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
@@ -293,20 +271,15 @@ public abstract class RDFXMLParserTestCase {
 				// Canonicalize the literal value
 				try {
 					value = new String(c14n.canonicalize(value.getBytes("UTF-8")), "UTF-8");
-				}
-				catch (UnsupportedEncodingException e) {
+				} catch (UnsupportedEncodingException e) {
 					throw new RuntimeException(e);
-				}
-				catch (CanonicalizationException e) {
+				} catch (CanonicalizationException e) {
 					// ignore
-				}
-				catch (ParserConfigurationException e) {
+				} catch (ParserConfigurationException e) {
 					throw new RuntimeException(e);
-				}
-				catch (IOException e) {
+				} catch (IOException e) {
 					throw new RuntimeException(e);
-				}
-				catch (SAXException e) {
+				} catch (SAXException e) {
 					// ignore
 				}
 			}
@@ -315,35 +288,11 @@ public abstract class RDFXMLParserTestCase {
 		}
 	}
 
-	private static URL url(String uri)
-		throws MalformedURLException
-	{
-		if (!uri.startsWith("injar:"))
-			return new URL(uri);
-		int start = uri.indexOf(':') + 3;
-		int end = uri.indexOf('/', start);
-		String encoded = uri.substring(start, end);
-		try {
-			String jar = URLDecoder.decode(encoded, "UTF-8");
-			return new URL("jar:" + jar + '!' + uri.substring(end));
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+	private static URL url(String uri) throws MalformedURLException {
+		return new URL(uri);
 	}
 
 	private static String base(String uri) {
-		if (!uri.startsWith("jar:"))
-			return uri;
-		int start = uri.indexOf(':') + 1;
-		int end = uri.lastIndexOf('!');
-		String jar = uri.substring(start, end);
-		try {
-			String encoded = URLEncoder.encode(jar, "UTF-8");
-			return "injar://" + encoded + uri.substring(end + 1);
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+		return uri;
 	}
 }

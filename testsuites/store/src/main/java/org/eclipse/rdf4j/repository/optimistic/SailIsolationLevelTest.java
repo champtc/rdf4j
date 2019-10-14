@@ -43,9 +43,7 @@ import org.slf4j.LoggerFactory;
 public class SailIsolationLevelTest {
 
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -66,84 +64,64 @@ public class SailIsolationLevelTest {
 	 *---------*/
 
 	@Before
-	public void setUp()
-		throws Exception
-	{
+	public void setUp() throws Exception {
 		store = OptimisticIsolationTest.getEmptyInitializedRepository(SailIsolationLevelTest.class);
 		failed = null;
 	}
 
 	@After
-	public void tearDown()
-		throws Exception
-	{
+	public void tearDown() throws Exception {
 		store.shutDown();
 	}
 
-	protected boolean isSupported(IsolationLevels level)
-		throws RepositoryException
-	{
+	protected boolean isSupported(IsolationLevels level) throws RepositoryException {
 		RepositoryConnection con = store.getConnection();
 		try {
 			con.begin(level);
 			return true;
-		}
-		catch (UnknownTransactionStateException e) {
+		} catch (UnknownTransactionStateException e) {
 			return false;
-		}
-		finally {
+		} finally {
 			try {
 				con.rollback();
-			}
-			finally {
+			} finally {
 				con.close();
 			}
 		}
 	}
 
 	@Test
-	public void testNone()
-		throws Exception
-	{
+	public void testNone() throws Exception {
 		readPending(IsolationLevels.NONE);
 	}
 
 	@Test
-	public void testReadUncommitted()
-		throws Exception
-	{
+	public void testReadUncommitted() throws Exception {
 		rollbackTriple(IsolationLevels.READ_UNCOMMITTED);
 		readPending(IsolationLevels.READ_UNCOMMITTED);
 	}
 
 	@Test
-	public void testReadCommitted()
-		throws Exception
-	{
+	public void testReadCommitted() throws Exception {
 		readCommitted(IsolationLevels.READ_COMMITTED);
 		rollbackTriple(IsolationLevels.READ_COMMITTED);
 		readPending(IsolationLevels.READ_COMMITTED);
 	}
 
 	@Test
-	public void testSnapshotRead()
-		throws Exception
-	{
+	public void testSnapshotRead() throws Exception {
 		if (isSupported(IsolationLevels.SNAPSHOT_READ)) {
 			snapshotRead(IsolationLevels.SNAPSHOT_READ);
 			readCommitted(IsolationLevels.SNAPSHOT_READ);
 			rollbackTriple(IsolationLevels.SNAPSHOT_READ);
 			readPending(IsolationLevels.SNAPSHOT_READ);
-		}
-		else {
+		} else {
 			logger.warn("{} does not support {}", store, IsolationLevels.SNAPSHOT_READ);
 		}
 	}
 
 	@Test
-	public void testSnapshot()
-		throws Exception
-	{
+	public void testSnapshot() throws Exception {
 		if (isSupported(IsolationLevels.SNAPSHOT)) {
 			snapshot(IsolationLevels.SNAPSHOT);
 			snapshotRead(IsolationLevels.SNAPSHOT);
@@ -151,16 +129,13 @@ public class SailIsolationLevelTest {
 			readCommitted(IsolationLevels.SNAPSHOT);
 			rollbackTriple(IsolationLevels.SNAPSHOT);
 			readPending(IsolationLevels.SNAPSHOT);
-		}
-		else {
+		} else {
 			logger.warn("{} does not support {}", store, IsolationLevels.SNAPSHOT);
 		}
 	}
 
 	@Test
-	public void testSerializable()
-		throws Exception
-	{
+	public void testSerializable() throws Exception {
 
 		if (isSupported(IsolationLevels.SERIALIZABLE)) {
 			serializable(IsolationLevels.SERIALIZABLE);
@@ -170,8 +145,7 @@ public class SailIsolationLevelTest {
 			readCommitted(IsolationLevels.SERIALIZABLE);
 			rollbackTriple(IsolationLevels.SERIALIZABLE);
 			readPending(IsolationLevels.SERIALIZABLE);
-		}
-		else {
+		} else {
 			logger.warn("{} does not support {}", store, IsolationLevels.SERIALIZABLE);
 		}
 	}
@@ -179,9 +153,7 @@ public class SailIsolationLevelTest {
 	/**
 	 * Every connection must support reading it own changes
 	 */
-	private void readPending(IsolationLevel level)
-		throws RepositoryException
-	{
+	private void readPending(IsolationLevel level) throws RepositoryException {
 		clear(store);
 		try (RepositoryConnection con = store.getConnection();) {
 			con.begin(level);
@@ -195,9 +167,7 @@ public class SailIsolationLevelTest {
 	/**
 	 * Supports rolling back added triples
 	 */
-	private void rollbackTriple(IsolationLevel level)
-		throws RepositoryException
-	{
+	private void rollbackTriple(IsolationLevel level) throws RepositoryException {
 		clear(store);
 		try (RepositoryConnection con = store.getConnection();) {
 			con.begin(level);
@@ -210,9 +180,7 @@ public class SailIsolationLevelTest {
 	/**
 	 * Read operations must not see uncommitted changes
 	 */
-	private void readCommitted(final IsolationLevel level)
-		throws Exception
-	{
+	private void readCommitted(final IsolationLevel level) throws Exception {
 		clear(store);
 		final CountDownLatch start = new CountDownLatch(2);
 		final CountDownLatch begin = new CountDownLatch(1);
@@ -228,8 +196,7 @@ public class SailIsolationLevelTest {
 					begin.countDown();
 					uncommitted.await(1, TimeUnit.SECONDS);
 					write.rollback();
-				}
-				catch (Throwable e) {
+				} catch (Throwable e) {
 					fail("Writer failed", e);
 				}
 			}
@@ -247,16 +214,14 @@ public class SailIsolationLevelTest {
 					uncommitted.countDown();
 					try {
 						read.commit();
-					}
-					catch (RepositoryException e) {
+					} catch (RepositoryException e) {
 						// it is okay to abort after a dirty read
 						// e.printStackTrace();
 						return;
 					}
 					// not read if transaction is consistent
 					assertEquals(0, counted);
-				}
-				catch (Throwable e) {
+				} catch (Throwable e) {
 					fail("Reader failed", e);
 				}
 			}
@@ -271,9 +236,7 @@ public class SailIsolationLevelTest {
 	/**
 	 * Any statement read in a transaction must remain present until the transaction is over
 	 */
-	private void repeatableRead(final IsolationLevels level)
-		throws Exception
-	{
+	private void repeatableRead(final IsolationLevels level) throws Exception {
 		clear(store);
 		final CountDownLatch start = new CountDownLatch(2);
 		final CountDownLatch begin = new CountDownLatch(1);
@@ -296,8 +259,7 @@ public class SailIsolationLevelTest {
 					write.remove(RDF.NIL, RDF.TYPE, RDF.LIST);
 					write.commit();
 					changed.countDown();
-				}
-				catch (Throwable e) {
+				} catch (Throwable e) {
 					fail("Writer failed", e);
 				}
 			}
@@ -318,8 +280,7 @@ public class SailIsolationLevelTest {
 					long second = count(read, RDF.NIL, RDF.TYPE, RDF.LIST, false);
 					try {
 						read.commit();
-					}
-					catch (RepositoryException e) {
+					} catch (RepositoryException e) {
 						// it is okay to abort on inconsistency
 						// e.printStackTrace();
 						read.rollback();
@@ -327,8 +288,7 @@ public class SailIsolationLevelTest {
 					}
 					// statement must continue to exist if transaction consistent
 					assertEquals(first, second);
-				}
-				catch (Throwable e) {
+				} catch (Throwable e) {
 					fail("Reader failed", e);
 				}
 			}
@@ -343,9 +303,7 @@ public class SailIsolationLevelTest {
 	/**
 	 * Query results must not include statements added after the first result is read
 	 */
-	private void snapshotRead(IsolationLevel level)
-		throws RepositoryException
-	{
+	private void snapshotRead(IsolationLevel level) throws RepositoryException {
 		clear(store);
 		try (RepositoryConnection con = store.getConnection();) {
 			con.begin(level);
@@ -354,9 +312,8 @@ public class SailIsolationLevelTest {
 				insertTestStatement(con, i);
 			}
 			int counter = 0;
-			try (CloseableIteration<? extends Statement, RepositoryException> stmts = con.getStatements(null,
-					null, null, false);)
-			{
+			try (CloseableIteration<? extends Statement, RepositoryException> stmts = con.getStatements(null, null,
+					null, false);) {
 				while (stmts.hasNext()) {
 					Statement st = stmts.next();
 					counter++;
@@ -370,8 +327,7 @@ public class SailIsolationLevelTest {
 			}
 			try {
 				con.commit();
-			}
-			catch (RepositoryException e) {
+			} catch (RepositoryException e) {
 				// it is okay to abort after a dirty read
 				e.printStackTrace();
 				return;
@@ -383,9 +339,7 @@ public class SailIsolationLevelTest {
 	/**
 	 * Reader observes the complete state of the store and ensure that does not change
 	 */
-	private void snapshot(final IsolationLevels level)
-		throws Exception
-	{
+	private void snapshot(final IsolationLevels level) throws Exception {
 		clear(store);
 		final CountDownLatch start = new CountDownLatch(2);
 		final CountDownLatch begin = new CountDownLatch(1);
@@ -410,12 +364,10 @@ public class SailIsolationLevelTest {
 						insertTestStatement(write, 2);
 						write.commit();
 						changed.countDown();
-					}
-					finally {
+					} finally {
 						write.close();
 					}
-				}
-				catch (Throwable e) {
+				} catch (Throwable e) {
 					fail("Writer failed", e);
 				}
 			}
@@ -435,8 +387,7 @@ public class SailIsolationLevelTest {
 					long second = count(read, null, null, null, false);
 					try {
 						read.commit();
-					}
-					catch (RepositoryException e) {
+					} catch (RepositoryException e) {
 						// it is okay to abort on inconsistency
 						// e.printStackTrace();
 						read.rollback();
@@ -444,8 +395,7 @@ public class SailIsolationLevelTest {
 					}
 					// store must not change if transaction consistent
 					assertEquals(first, second);
-				}
-				catch (Throwable e) {
+				} catch (Throwable e) {
 					fail("Reader failed", e);
 				}
 			}
@@ -460,9 +410,7 @@ public class SailIsolationLevelTest {
 	/**
 	 * Two transactions read a value and replace it
 	 */
-	private void serializable(final IsolationLevels level)
-		throws Exception
-	{
+	private void serializable(final IsolationLevels level) throws Exception {
 		clear(store);
 		final ValueFactory vf = store.getValueFactory();
 		final IRI subj = vf.createIRI("http://test#s");
@@ -493,10 +441,8 @@ public class SailIsolationLevelTest {
 		}
 	}
 
-	protected Thread incrementBy(final CountDownLatch start, final CountDownLatch observed,
-			final IsolationLevels level, final ValueFactory vf, final IRI subj, final IRI pred,
-			final int by)
-	{
+	protected Thread incrementBy(final CountDownLatch start, final CountDownLatch observed, final IsolationLevels level,
+			final ValueFactory vf, final IRI subj, final IRI pred, final int by) {
 		return new Thread(new Runnable() {
 
 			public void run() {
@@ -511,23 +457,19 @@ public class SailIsolationLevelTest {
 					con.add(subj, pred, vf.createLiteral(o1.intValue() + by));
 					try {
 						con.commit();
-					}
-					catch (RepositoryException e) {
+					} catch (RepositoryException e) {
 						// it is okay to abort on conflict
-						//e.printStackTrace();
+						// e.printStackTrace();
 						con.rollback();
 					}
-				}
-				catch (Throwable e) {
+				} catch (Throwable e) {
 					fail("Increment " + by + " failed", e);
 				}
 			}
 		});
 	}
 
-	private void clear(Repository store)
-		throws RepositoryException
-	{
+	private void clear(Repository store) throws RepositoryException {
 		try (RepositoryConnection con = store.getConnection();) {
 			con.begin();
 			con.clear();
@@ -535,13 +477,10 @@ public class SailIsolationLevelTest {
 		}
 	}
 
-	protected long count(RepositoryConnection con, Resource subj, IRI pred, Value obj,
-			boolean includeInferred, Resource... contexts)
-		throws RepositoryException
-	{
+	protected long count(RepositoryConnection con, Resource subj, IRI pred, Value obj, boolean includeInferred,
+			Resource... contexts) throws RepositoryException {
 		try (CloseableIteration<Statement, RepositoryException> stmts = con.getStatements(subj, pred, obj,
-				includeInferred, contexts);)
-		{
+				includeInferred, contexts);) {
 			long counter = 0;
 			while (stmts.hasNext()) {
 				stmts.next();
@@ -551,12 +490,9 @@ public class SailIsolationLevelTest {
 		}
 	}
 
-	protected Literal readLiteral(RepositoryConnection con, final IRI subj, final IRI pred)
-		throws RepositoryException
-	{
-		try (CloseableIteration<? extends Statement, RepositoryException> stmts = con.getStatements(subj,
-				pred, null, false);)
-		{
+	protected Literal readLiteral(RepositoryConnection con, final IRI subj, final IRI pred) throws RepositoryException {
+		try (CloseableIteration<? extends Statement, RepositoryException> stmts = con.getStatements(subj, pred, null,
+				false);) {
 			if (!stmts.hasNext()) {
 				return null;
 			}
@@ -564,13 +500,11 @@ public class SailIsolationLevelTest {
 			if (stmts.hasNext()) {
 				org.junit.Assert.fail("multiple literals: " + obj + " and " + stmts.next());
 			}
-			return (Literal)obj;
+			return (Literal) obj;
 		}
 	}
 
-	protected void insertTestStatement(RepositoryConnection connection, int i)
-		throws RepositoryException
-	{
+	protected void insertTestStatement(RepositoryConnection connection, int i) throws RepositoryException {
 		ValueFactory vf = connection.getValueFactory();
 		Literal lit = vf.createLiteral(Integer.toString(i), XMLSchema.INTEGER);
 		connection.add(vf.createIRI("http://test#s" + i), vf.createIRI("http://test#p"), lit,
@@ -584,7 +518,7 @@ public class SailIsolationLevelTest {
 
 	protected synchronized void assertNotFailed() {
 		if (failed != null) {
-			throw (AssertionError)new AssertionError(failedMessage).initCause(failed);
+			throw (AssertionError) new AssertionError(failedMessage).initCause(failed);
 		}
 	}
 

@@ -9,11 +9,9 @@ package org.eclipse.rdf4j.query.parser.serql;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import org.eclipse.rdf4j.common.io.IOUtil;
 import org.eclipse.rdf4j.model.IRI;
@@ -87,12 +85,10 @@ public abstract class SeRQLParserTestCase extends TestCase {
 	 *---------*/
 
 	@Override
-	protected void runTest()
-		throws Exception
-	{
+	protected void runTest() throws Exception {
 		// Read query from file
 		InputStream stream = url(queryFile).openStream();
-		String query = IOUtil.readString(new InputStreamReader(stream, "UTF-8"));
+		String query = IOUtil.readString(new InputStreamReader(stream, StandardCharsets.UTF_8));
 		stream.close();
 
 		try {
@@ -101,12 +97,10 @@ public abstract class SeRQLParserTestCase extends TestCase {
 			if (MFX_PARSE_ERROR.equals(result)) {
 				fail("Negative syntax test failed. Malformed query caused no error.");
 			}
-		}
-		catch (MalformedQueryException e) {
+		} catch (MalformedQueryException e) {
 			if (MFX_CORRECT.equals(result)) {
 				fail("Positive syntax test failed: " + e.getMessage());
-			}
-			else {
+			} else {
 				return;
 			}
 		}
@@ -118,9 +112,7 @@ public abstract class SeRQLParserTestCase extends TestCase {
 	 * Test methods *
 	 *--------------*/
 
-	public static Test suite(Factory factory)
-		throws Exception
-	{
+	public static Test suite(Factory factory) throws Exception {
 		TestSuite suite = new TestSuite();
 		suite.setName("SeRQL Syntax Tests");
 
@@ -153,11 +145,9 @@ public abstract class SeRQLParserTestCase extends TestCase {
 			Value result = testBindings.getValue("result");
 			if (MFX_CORRECT.equals(result)) {
 				positiveTests.addTest(factory.createTest(testName, queryFile, result));
-			}
-			else if (MFX_PARSE_ERROR.equals(result)) {
+			} else if (MFX_PARSE_ERROR.equals(result)) {
 				negativeTests.addTest(factory.createTest(testName, queryFile, result));
-			}
-			else {
+			} else {
 				logger.warn("Unexpected result value for test \"" + testName + "\": " + result);
 			}
 		}
@@ -171,35 +161,11 @@ public abstract class SeRQLParserTestCase extends TestCase {
 		return suite;
 	}
 
-	private static URL url(String uri)
-		throws MalformedURLException
-	{
-		if (!uri.startsWith("injar:"))
-			return new URL(uri);
-		int start = uri.indexOf(':') + 3;
-		int end = uri.indexOf('/', start);
-		String encoded = uri.substring(start, end);
-		try {
-			String jar = URLDecoder.decode(encoded, "UTF-8");
-			return new URL("jar:" + jar + '!' + uri.substring(end));
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+	private static URL url(String uri) throws MalformedURLException {
+		return new URL(uri);
 	}
 
 	private static String base(String uri) {
-		if (!uri.startsWith("jar:"))
-			return uri;
-		int start = uri.indexOf(':') + 1;
-		int end = uri.lastIndexOf('!');
-		String jar = uri.substring(start, end);
-		try {
-			String encoded = URLEncoder.encode(jar, "UTF-8");
-			return "injar://" + encoded + uri.substring(end + 1);
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+		return uri;
 	}
 }
