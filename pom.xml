@@ -876,9 +876,9 @@
 		</repository>
 	</repositories>
 	<scm>
-		<connection>scm:git:git://github.com:eclipse/rdf4j.git</connection>
-		<developerConnection>scm:git:git@github.com:eclipse/rdf4j.git</developerConnection>
-		<url>https://github.com/eclipse/rdf4j</url>
+		<connection>scm:git:git://github.com:champtc/rdf4j.git</connection>
+		<developerConnection>scm:git:git@github.com:champtc/rdf4j.git</developerConnection>
+		<url>https://github.com/champtc/rdf4j</url>
 	</scm>
 
 </project>
