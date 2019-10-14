@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.eclipse.rdf4j</groupId>
 		<artifactId>rdf4j-queryresultio</artifactId>
-		<version>2.3-SNAPSHOT</version>
+		<version>3.0.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>rdf4j-queryresultio-text</artifactId>
@@ -33,7 +33,16 @@
 		<dependency>
 			<groupId>com.opencsv</groupId>
 			<artifactId>opencsv</artifactId>
-			<version>3.2</version>
+			<version>4.3.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>rdf4j-queryresultio-api</artifactId>
+			<version>${project.version}</version>
+			<classifier>tests</classifier>
+			<type>test-jar</type>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -48,5 +57,4 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 </project>

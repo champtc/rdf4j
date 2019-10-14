@@ -7,15 +7,12 @@
  *******************************************************************************/
 package org.eclipse.rdf4j.sail.helpers;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.ValueFactory;
 import org.eclipse.rdf4j.sail.SailConnectionListener;
 import org.eclipse.rdf4j.sail.SailException;
-import org.eclipse.rdf4j.sail.helpers.NotifyingSailConnectionWrapper;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.junit.After;
 import org.junit.Before;
@@ -24,15 +21,13 @@ import org.junit.Test;
 
 /**
  * Some general tests for {@link NogifyingSailConnectionWrapper} expected behaviour.
- * 
+ *
  * @author Dale Visser
  */
 public class NotifyingSailConnectionWrapperTest {
 
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -67,59 +62,47 @@ public class NotifyingSailConnectionWrapperTest {
 	MemoryStore memoryStore = new MemoryStore();
 
 	@Before
-	public void setUp()
-		throws SailException
-	{
+	public void setUp() throws SailException {
 		memoryStore.initialize();
 		wrapper = new NotifyingSailConnectionWrapper(memoryStore.getConnection());
 		factory = memoryStore.getValueFactory();
 	}
 
 	@After
-	public void tearDown()
-		throws SailException
-	{
+	public void tearDown() throws SailException {
 		try {
 			wrapper.close();
-		}
-		finally {
+		} finally {
 			memoryStore.shutDown();
 		}
 	}
 
 	/**
 	 * Regression test for SES-1934.
-	 * 
+	 *
 	 * @throws SailException
 	 */
 	@Test
-	public void testAddThenRemoveListener()
-		throws SailException
-	{
+	public void testAddThenRemoveListener() throws SailException {
 		wrapper.addConnectionListener(listener);
 		addStatement("a");
-		assertThat(listener.getCount(), is(equalTo(1)));
+		assertThat(listener.getCount()).isEqualTo(1);
 		removeStatement("a");
-		assertThat(listener.getCount(), is(equalTo(0)));
+		assertThat(listener.getCount()).isEqualTo(0);
 		wrapper.removeConnectionListener(listener);
 		addStatement("b");
-		assertThat(listener.getCount(), is(equalTo(0)));
+		assertThat(listener.getCount()).isEqualTo(0);
 	}
 
-	private void removeStatement(String objectValue)
-		throws SailException
-	{
+	private void removeStatement(String objectValue) throws SailException {
 		wrapper.begin();
 		wrapper.removeStatements(null, factory.createIRI("urn:pred"), factory.createLiteral(objectValue));
 		wrapper.commit();
 	}
 
-	private void addStatement(String objectValue)
-		throws SailException
-	{
+	private void addStatement(String objectValue) throws SailException {
 		wrapper.begin();
-		wrapper.addStatement(factory.createBNode(), factory.createIRI("urn:pred"),
-				factory.createLiteral(objectValue));
+		wrapper.addStatement(factory.createBNode(), factory.createIRI("urn:pred"), factory.createLiteral(objectValue));
 		wrapper.commit();
 	}
 }

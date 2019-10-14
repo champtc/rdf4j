@@ -8,18 +8,12 @@
 package org.eclipse.rdf4j.rio.n3;
 
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import org.eclipse.rdf4j.model.Statement;
 import org.eclipse.rdf4j.model.util.Models;
@@ -35,6 +29,9 @@ import org.eclipse.rdf4j.rio.RDFParser;
 import org.eclipse.rdf4j.rio.helpers.StatementCollector;
 import org.eclipse.rdf4j.rio.ntriples.NTriplesParser;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
+
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
  * JUnit test for the N3 parser that uses the tests that are available
@@ -54,9 +51,7 @@ public abstract class N3ParserTestCase {
 	 * Static initializer *
 	 *--------------------*/
 
-	public TestSuite createTestSuite()
-		throws Exception
-	{
+	public TestSuite createTestSuite() throws Exception {
 		// Create test suite
 		TestSuite suite = new TestSuite(N3ParserTestCase.class.getName());
 
@@ -69,8 +64,7 @@ public abstract class N3ParserTestCase {
 		con.add(url, base(MANIFEST_URL), RDFFormat.TURTLE);
 
 		// Add all positive parser tests to the test suite
-		String query = "SELECT testURI, inputURL, outputURL "
-				+ "FROM {testURI} rdf:type {n3test:PositiveParserTest}; "
+		String query = "SELECT testURI, inputURL, outputURL " + "FROM {testURI} rdf:type {n3test:PositiveParserTest}; "
 				+ "               n3test:inputDocument {inputURL}; "
 				+ "               n3test:outputDocument {outputURL} "
 				+ "USING NAMESPACE n3test = <http://www.w3.org/2004/11/n3test#>";
@@ -128,9 +122,7 @@ public abstract class N3ParserTestCase {
 		 * Constructors *
 		 *--------------*/
 
-		public PositiveParserTest(String testURI, String inputURL, String outputURL)
-			throws MalformedURLException
-		{
+		public PositiveParserTest(String testURI, String inputURL, String outputURL) throws MalformedURLException {
 			super(testURI);
 			this.inputURL = url(inputURL);
 			this.outputURL = url(outputURL);
@@ -141,14 +133,12 @@ public abstract class N3ParserTestCase {
 		 *---------*/
 
 		@Override
-		protected void runTest()
-			throws Exception
-		{
+		protected void runTest() throws Exception {
 			// Parse input data
 			RDFParser turtleParser = createRDFParser();
 			turtleParser.setDatatypeHandling(RDFParser.DatatypeHandling.IGNORE);
 
-			Set<Statement> inputCollection = new LinkedHashSet<Statement>();
+			Set<Statement> inputCollection = new LinkedHashSet<>();
 			StatementCollector inputCollector = new StatementCollector(inputCollection);
 			turtleParser.setRDFHandler(inputCollector);
 
@@ -160,7 +150,7 @@ public abstract class N3ParserTestCase {
 			NTriplesParser ntriplesParser = new NTriplesParser();
 			ntriplesParser.setDatatypeHandling(RDFParser.DatatypeHandling.IGNORE);
 
-			Set<Statement> outputCollection = new LinkedHashSet<Statement>();
+			Set<Statement> outputCollection = new LinkedHashSet<>();
 			StatementCollector outputCollector = new StatementCollector(outputCollection);
 			ntriplesParser.setRDFHandler(outputCollector);
 
@@ -175,10 +165,10 @@ public abstract class N3ParserTestCase {
 				// System.err.println("Actual : " + inputCollection);
 				// System.err.println("======================");
 
-				List<Statement> missing = new LinkedList<Statement>(outputCollection);
+				List<Statement> missing = new LinkedList<>(outputCollection);
 				missing.removeAll(inputCollection);
 
-				List<Statement> unexpected = new LinkedList<Statement>(inputCollection);
+				List<Statement> unexpected = new LinkedList<>(inputCollection);
 				unexpected.removeAll(outputCollection);
 
 				if (!missing.isEmpty()) {
@@ -210,9 +200,7 @@ public abstract class N3ParserTestCase {
 		 * Constructors *
 		 *--------------*/
 
-		public NegativeParserTest(String testURI, String inputURL)
-			throws MalformedURLException
-		{
+		public NegativeParserTest(String testURI, String inputURL) throws MalformedURLException {
 			super(testURI);
 			this.inputURL = url(inputURL);
 		}
@@ -236,46 +224,20 @@ public abstract class N3ParserTestCase {
 				in.close();
 
 				fail("Parser parses erroneous data without reporting errors");
-			}
-			catch (RDFParseException e) {
+			} catch (RDFParseException e) {
 				// This is expected as the input file is incorrect RDF
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				fail("Error: " + e.getMessage());
 			}
 		}
 
 	} // end inner class NegativeParserTest
 
-	private static URL url(String uri)
-		throws MalformedURLException
-	{
-		if (!uri.startsWith("injar:"))
-			return new URL(uri);
-		int start = uri.indexOf(':') + 3;
-		int end = uri.indexOf('/', start);
-		String encoded = uri.substring(start, end);
-		try {
-			String jar = URLDecoder.decode(encoded, "UTF-8");
-			return new URL("jar:" + jar + '!' + uri.substring(end));
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+	private static URL url(String uri) throws MalformedURLException {
+		return new URL(uri);
 	}
 
 	private static String base(String uri) {
-		if (!uri.startsWith("jar:"))
-			return uri;
-		int start = uri.indexOf(':') + 1;
-		int end = uri.lastIndexOf('!');
-		String jar = uri.substring(start, end);
-		try {
-			String encoded = URLEncoder.encode(jar, "UTF-8");
-			return "injar://" + encoded + uri.substring(end + 1);
-		}
-		catch (UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
+		return uri;
 	}
 }

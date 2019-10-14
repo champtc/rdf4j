@@ -7,13 +7,11 @@
  *******************************************************************************/
 package org.eclipse.rdf4j.rio.turtle;
 
-import junit.framework.Test;
-
 import org.eclipse.rdf4j.rio.RDFParser;
-import org.eclipse.rdf4j.rio.helpers.TurtleParserSettings;
+import org.eclipse.rdf4j.rio.helpers.BasicParserSettings;
 import org.eclipse.rdf4j.rio.ntriples.NTriplesParser;
-import org.eclipse.rdf4j.rio.turtle.TurtleParser;
-import org.eclipse.rdf4j.rio.turtle.TurtleParserTestCase;
+
+import junit.framework.Test;
 
 /**
  * JUnit test for the Turtle parser that uses the tests that are available
@@ -21,15 +19,14 @@ import org.eclipse.rdf4j.rio.turtle.TurtleParserTestCase;
  */
 public class TurtleParserTest extends TurtleParserTestCase {
 
-	public static Test suite()
-		throws Exception
-	{
+	public static Test suite() throws Exception {
 		return new TurtleParserTest().createTestSuite();
 	}
 
 	@Override
 	protected RDFParser createTurtleParser() {
 		RDFParser result = new TurtleParser();
+		result.set(BasicParserSettings.VERIFY_DATATYPE_VALUES, true);
 		return result;
 	}
 

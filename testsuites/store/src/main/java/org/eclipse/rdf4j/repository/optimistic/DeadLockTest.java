@@ -27,9 +27,7 @@ import org.junit.Test;
 public class DeadLockTest {
 
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -50,9 +48,7 @@ public class DeadLockTest {
 	private IRI REMBRANDT;
 
 	@Before
-	public void setUp()
-		throws Exception
-	{
+	public void setUp() throws Exception {
 		repo = OptimisticIsolationTest.getEmptyInitializedRepository(DeadLockTest.class);
 		ValueFactory uf = repo.getValueFactory();
 		PAINTER = uf.createIRI(NS, "Painter");
@@ -63,26 +59,20 @@ public class DeadLockTest {
 	}
 
 	@After
-	public void tearDown()
-		throws Exception
-	{
+	public void tearDown() throws Exception {
 		try {
 			a.close();
-		}
-		finally {
+		} finally {
 			try {
 				b.close();
-			}
-			finally {
+			} finally {
 				repo.shutDown();
 			}
 		}
 	}
 
 	@Test
-	public void test()
-		throws Exception
-	{
+	public void test() throws Exception {
 		final CountDownLatch start = new CountDownLatch(2);
 		final CountDownLatch end = new CountDownLatch(2);
 		final CountDownLatch commit = new CountDownLatch(1);
@@ -96,12 +86,10 @@ public class DeadLockTest {
 					a.add(PICASSO, RDF.TYPE, PAINTER);
 					commit.await();
 					a.commit();
-				}
-				catch (Exception e) {
+				} catch (Exception e) {
 					e1.initCause(e);
 					a.rollback();
-				}
-				finally {
+				} finally {
 					end.countDown();
 				}
 			}
@@ -116,12 +104,10 @@ public class DeadLockTest {
 					b.add(REMBRANDT, RDF.TYPE, PAINTER);
 					commit.await();
 					b.commit();
-				}
-				catch (Exception e) {
+				} catch (Exception e) {
 					e2.initCause(e);
 					b.rollback();
-				}
-				finally {
+				} finally {
 					end.countDown();
 				}
 			}

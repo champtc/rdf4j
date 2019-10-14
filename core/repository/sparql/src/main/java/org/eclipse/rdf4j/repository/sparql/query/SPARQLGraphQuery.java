@@ -32,48 +32,40 @@ public class SPARQLGraphQuery extends AbstractHTTPQuery implements GraphQuery {
 		super(httpClient, QueryLanguage.SPARQL, queryString, baseURI);
 	}
 
-	public GraphQueryResult evaluate()
-		throws QueryEvaluationException
-	{
+	@Override
+	public GraphQueryResult evaluate() throws QueryEvaluationException {
 		SPARQLProtocolSession client = getHttpClient();
 		try {
 			// TODO getQueryString() already inserts bindings, use emptybindingset
 			// as last argument?
-			return client.sendGraphQuery(queryLanguage, getQueryString(), baseURI, dataset,
-					getIncludeInferred(), getMaxExecutionTime(), getBindingsArray());
-		}
-		catch (IOException e) {
+			return client.sendGraphQuery(queryLanguage, getQueryString(), baseURI, dataset, getIncludeInferred(),
+					getMaxExecutionTime(), getBindingsArray());
+		} catch (IOException e) {
 			throw new QueryEvaluationException(e.getMessage(), e);
-		}
-		catch (RepositoryException e) {
+		} catch (RepositoryException e) {
 			throw new QueryEvaluationException(e.getMessage(), e);
-		}
-		catch (MalformedQueryException e) {
+		} catch (MalformedQueryException e) {
 			throw new QueryEvaluationException(e.getMessage(), e);
 		}
 	}
 
-	public void evaluate(RDFHandler handler)
-		throws QueryEvaluationException, RDFHandlerException
-	{
+	@Override
+	public void evaluate(RDFHandler handler) throws QueryEvaluationException, RDFHandlerException {
 
 		SPARQLProtocolSession client = getHttpClient();
 		try {
 			client.sendGraphQuery(queryLanguage, getQueryString(), baseURI, dataset, getIncludeInferred(),
 					getMaxExecutionTime(), handler, getBindingsArray());
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			throw new QueryEvaluationException(e.getMessage(), e);
-		}
-		catch (RepositoryException e) {
+		} catch (RepositoryException e) {
 			throw new QueryEvaluationException(e.getMessage(), e);
-		}
-		catch (MalformedQueryException e) {
+		} catch (MalformedQueryException e) {
 			throw new QueryEvaluationException(e.getMessage(), e);
 		}
 	}
 
 	private String getQueryString() {
-		return QueryStringUtil.getQueryString(queryString, getBindings());
+		return QueryStringUtil.getGraphQueryString(queryString, getBindings());
 	}
 }

@@ -7,17 +7,11 @@
  *******************************************************************************/
 package org.eclipse.rdf4j.rio;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestListener;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
-
 import org.eclipse.rdf4j.model.BNode;
 import org.eclipse.rdf4j.model.IRI;
 import org.eclipse.rdf4j.model.Resource;
@@ -33,13 +27,16 @@ import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.RepositoryException;
 import org.eclipse.rdf4j.repository.sail.SailRepository;
-import org.eclipse.rdf4j.rio.RDFFormat;
-import org.eclipse.rdf4j.rio.RDFWriterFactory;
-import org.eclipse.rdf4j.rio.RDFWriterRegistry;
-import org.eclipse.rdf4j.rio.Rio;
 import org.eclipse.rdf4j.sail.memory.MemoryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * @author Arjohn Kampman
@@ -55,8 +52,8 @@ public class EarlReport {
 	/**
 	 * Helper variable for tests run by Jeen Broekstra
 	 */
-	public static final IRI BROEKSTRA = SimpleValueFactory.getInstance().createIRI(
-			"https://bitbucket.org/jeenbroekstra");
+	public static final IRI BROEKSTRA = SimpleValueFactory.getInstance()
+			.createIRI("https://bitbucket.org/jeenbroekstra");
 
 	protected Repository earlRepository;
 
@@ -70,9 +67,7 @@ public class EarlReport {
 
 	private Logger logger = LoggerFactory.getLogger(this.getClass());
 
-	public void generateReport(TestSuite nextTestSuite, IRI nextAsserterNode, IRI specURI)
-		throws Exception
-	{
+	public void generateReport(TestSuite nextTestSuite, IRI nextAsserterNode, IRI specURI) throws Exception {
 		// IMPORTANT: Set this to whoever is running the tests
 		asserterNode = nextAsserterNode;
 
@@ -104,8 +99,7 @@ public class EarlReport {
 		con.add(projectNode, DOAP.CREATED, vf.createLiteral("2004-03-25", XMLSchema.DATE));
 		con.add(projectNode, DOAP.PROGRAMMING_LANGUAGE, vf.createLiteral("Java"));
 		con.add(projectNode, DOAP.IMPLEMENTS, specURI);
-		con.add(projectNode, DOAP.DOWNLOAD_PAGE,
-				vf.createIRI("http://sourceforge.net/projects/sesame/files/"));
+		con.add(projectNode, DOAP.DOWNLOAD_PAGE, vf.createIRI("http://sourceforge.net/projects/sesame/files/"));
 		con.add(projectNode, DOAP.MAILING_LIST,
 				vf.createIRI("http://lists.sourceforge.net/lists/listinfo/sesame-general"));
 		con.add(projectNode, DOAP.BUG_DATABASE, vf.createIRI("https://openrdf.atlassian.net/browse/SES"));
@@ -139,16 +133,12 @@ public class EarlReport {
 
 		con.commit();
 
-		RDFWriterFactory factory = RDFWriterRegistry.getInstance().get(RDFFormat.TURTLE).orElseThrow(
-				Rio.unsupportedFormat(RDFFormat.TURTLE));
-		File outFile = File.createTempFile("sesame-earl-compliance",
-				"." + RDFFormat.TURTLE.getDefaultFileExtension());
-		FileOutputStream out = new FileOutputStream(outFile);
-		try {
+		RDFWriterFactory factory = RDFWriterRegistry.getInstance()
+				.get(RDFFormat.TURTLE)
+				.orElseThrow(Rio.unsupportedFormat(RDFFormat.TURTLE));
+		File outFile = File.createTempFile("sesame-earl-compliance", "." + RDFFormat.TURTLE.getDefaultFileExtension());
+		try (OutputStream out = new BufferedOutputStream(new FileOutputStream(outFile))) {
 			con.export(factory.getWriter(out));
-		}
-		finally {
-			out.close();
 		}
 
 		con.close();
@@ -172,13 +162,11 @@ public class EarlReport {
 			IRI testURI = null;
 			boolean didIgnoreFailure = false;
 			if (test instanceof PositiveParserTest) {
-				testURI = ((PositiveParserTest)test).testUri;
-			}
-			else if (test instanceof NegativeParserTest) {
-				testURI = ((NegativeParserTest)test).testUri;
-				didIgnoreFailure = ((NegativeParserTest)test).didIgnoreFailure;
-			}
-			else {
+				testURI = ((PositiveParserTest) test).testUri;
+			} else if (test instanceof NegativeParserTest) {
+				testURI = ((NegativeParserTest) test).testUri;
+				didIgnoreFailure = ((NegativeParserTest) test).didIgnoreFailure;
+			} else {
 				throw new RuntimeException("Unexpected test type: " + test.getClass());
 			}
 			System.out.println("testURI: " + testURI.stringValue());
@@ -195,15 +183,12 @@ public class EarlReport {
 
 				if (didIgnoreFailure) {
 					con.add(resultNode, EARL.OUTCOME, EARL.NOTTESTED);
-				}
-				else if (errorCount > 0 || failureCount > 0) {
+				} else if (errorCount > 0 || failureCount > 0) {
 					con.add(resultNode, EARL.OUTCOME, EARL.FAIL);
-				}
-				else {
+				} else {
 					con.add(resultNode, EARL.OUTCOME, EARL.PASS);
 				}
-			}
-			catch (RepositoryException e) {
+			} catch (RepositoryException e) {
 				throw new RuntimeException(e);
 			}
 		}

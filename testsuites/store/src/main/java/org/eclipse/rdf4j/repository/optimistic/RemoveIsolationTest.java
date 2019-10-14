@@ -28,9 +28,7 @@ import org.junit.Test;
 public class RemoveIsolationTest {
 
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -43,34 +41,27 @@ public class RemoveIsolationTest {
 	private IsolationLevel level = IsolationLevels.SNAPSHOT_READ;
 
 	@Before
-	public void setUp()
-		throws Exception
-	{
+	public void setUp() throws Exception {
 		repo = OptimisticIsolationTest.getEmptyInitializedRepository(RemoveIsolationTest.class);
 		con = repo.getConnection();
 		f = con.getValueFactory();
 	}
 
 	@After
-	public void tearDown()
-		throws Exception
-	{
+	public void tearDown() throws Exception {
 		try {
 			con.close();
-		}
-		finally {
+		} finally {
 			repo.shutDown();
 		}
 	}
 
 	@Test
-	public void testRemoveOptimisticIsolation()
-		throws Exception
-	{
+	public void testRemoveOptimisticIsolation() throws Exception {
 		con.begin(level);
 
-		con.add(f.createIRI("http://example.org/people/alice"),
-				f.createIRI("http://example.org/ontology/name"), f.createLiteral("Alice"));
+		con.add(f.createIRI("http://example.org/people/alice"), f.createIRI("http://example.org/ontology/name"),
+				f.createLiteral("Alice"));
 
 		try (RepositoryResult<Statement> stats = con.getStatements(null, null, null, true);) {
 			con.remove(stats);
@@ -83,13 +74,11 @@ public class RemoveIsolationTest {
 	}
 
 	@Test
-	public void testRemoveIsolation()
-		throws Exception
-	{
+	public void testRemoveIsolation() throws Exception {
 		con.begin(level);
 
-		con.add(f.createIRI("http://example.org/people/alice"),
-				f.createIRI("http://example.org/ontology/name"), f.createLiteral("Alice"));
+		con.add(f.createIRI("http://example.org/people/alice"), f.createIRI("http://example.org/ontology/name"),
+				f.createLiteral("Alice"));
 
 		try (RepositoryResult<Statement> stats = con.getStatements(null, null, null, true);) {
 			con.remove(stats);

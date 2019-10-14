@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>org.eclipse.rdf4j</groupId>
 		<artifactId>rdf4j</artifactId>
-		<version>2.3-SNAPSHOT</version>
+		<version>3.0.2-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>rdf4j-core</artifactId>
@@ -16,21 +16,19 @@
 	<modules>
 		<module>util</module>
 		<module>model</module>
+                <module>sparqlbuilder</module>
 		<module>rio</module>
 		<module>queryresultio</module>
 		<module>query</module>
 		<module>queryalgebra</module>
 		<module>queryparser</module>
+                <module>http</module>
 		<module>queryrender</module>
-		<module>sail</module>
 		<module>repository</module>
+		<module>sail</module>
 		<module>spin</module>
-		<module>config</module>
-		<module>console</module>
-		<module>http</module>
-		<module>runtime</module>
-		<module>runtime-osgi</module>
-		<module>assembly</module> <!-- this module should always be last in the list -->
+		<module>client</module>
+		<module>storage</module>
 	</modules>
 
 	<name>RDF4J Core</name>

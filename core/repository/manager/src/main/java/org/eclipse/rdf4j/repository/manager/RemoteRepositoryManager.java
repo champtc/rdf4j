@@ -7,7 +7,10 @@
  *******************************************************************************/
 package org.eclipse.rdf4j.repository.manager;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -15,26 +18,31 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.http.client.HttpClient;
-import org.eclipse.rdf4j.http.client.HttpClientSessionManager;
-import org.eclipse.rdf4j.http.client.SharedHttpClientSessionManager;
 import org.eclipse.rdf4j.http.client.RDF4JProtocolSession;
+import org.eclipse.rdf4j.http.client.SharedHttpClientSessionManager;
+import org.eclipse.rdf4j.http.protocol.Protocol;
 import org.eclipse.rdf4j.http.protocol.UnauthorizedException;
 import org.eclipse.rdf4j.model.IRI;
+import org.eclipse.rdf4j.model.Model;
+import org.eclipse.rdf4j.model.Resource;
 import org.eclipse.rdf4j.model.Value;
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory;
 import org.eclipse.rdf4j.model.util.Literals;
 import org.eclipse.rdf4j.query.BindingSet;
 import org.eclipse.rdf4j.query.QueryEvaluationException;
 import org.eclipse.rdf4j.query.TupleQueryResult;
 import org.eclipse.rdf4j.repository.Repository;
 import org.eclipse.rdf4j.repository.RepositoryException;
+import org.eclipse.rdf4j.repository.config.RepositoryConfig;
 import org.eclipse.rdf4j.repository.config.RepositoryConfigException;
 import org.eclipse.rdf4j.repository.config.RepositoryConfigUtil;
 import org.eclipse.rdf4j.repository.http.HTTPRepository;
+import org.eclipse.rdf4j.rio.Rio;
+import org.eclipse.rdf4j.rio.helpers.StatementCollector;
 
 /**
- * A manager for {@link Repository}s that reside on a remote server. This repository manager allows one to
- * access repositories over HTTP similar to how local repositories are accessed using the
- * {@link LocalRepositoryManager}.
+ * A manager for {@link Repository}s that reside on a remote server. This repository manager allows one to access
+ * repositories over HTTP similar to how local repositories are accessed using the {@link LocalRepositoryManager}.
  * 
  * @author Arjohn Kampman
  */
@@ -47,11 +55,9 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	/**
 	 * Creates an initialized {@link RemoteRepositoryManager} with the specified server URL.
 	 */
-	public static RemoteRepositoryManager getInstance(String serverURL)
-		throws RepositoryException
-	{
+	public static RemoteRepositoryManager getInstance(String serverURL) throws RepositoryException {
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(serverURL);
-		manager.initialize();
+		manager.init();
 		return manager;
 	}
 
@@ -59,11 +65,10 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	 * Creates an initialized {@link RemoteRepositoryManager} with the specified server URL and credentials.
 	 */
 	public static RemoteRepositoryManager getInstance(String serverURL, String username, String password)
-		throws RepositoryException
-	{
+			throws RepositoryException {
 		RemoteRepositoryManager manager = new RemoteRepositoryManager(serverURL);
 		manager.setUsernameAndPassword(username, password);
-		manager.initialize();
+		manager.init();
 		return manager;
 	}
 
@@ -90,8 +95,7 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	/**
 	 * Creates a new RepositoryManager that operates on the specified base directory.
 	 * 
-	 * @param serverURL
-	 *        The URL of the server.
+	 * @param serverURL The URL of the server.
 	 */
 	public RemoteRepositoryManager(String serverURL) {
 		super();
@@ -103,9 +107,9 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	 *---------*/
 
 	/**
-	 * @return Returns the httpClient.
+	 * @return Returns the {@link SharedHttpClientSessionManager}
 	 */
-	protected SharedHttpClientSessionManager getSesameClient() {
+	protected SharedHttpClientSessionManager getSharedHttpClientSessionManager() {
 		SharedHttpClientSessionManager result = client;
 		if (result == null) {
 			synchronized (this) {
@@ -123,30 +127,21 @@ public class RemoteRepositoryManager extends RepositoryManager {
 		SharedHttpClientSessionManager nextClient = client;
 		if (nextClient == null) {
 			return null;
-		}
-		else {
+		} else {
 			return nextClient.getHttpClient();
 		}
 	}
 
 	@Override
 	public void setHttpClient(HttpClient httpClient) {
-		getSesameClient().setHttpClient(httpClient);
-	}
-
-	@Override
-	public void initialize()
-		throws RepositoryException
-	{
-		super.initialize();
+		getSharedHttpClientSessionManager().setHttpClient(httpClient);
 	}
 
 	@Override
 	public void shutDown() {
 		try {
 			super.shutDown();
-		}
-		finally {
+		} finally {
 			SharedHttpClientSessionManager toCloseClient = client;
 			client = null;
 			if (toCloseClient != null) {
@@ -158,10 +153,8 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	/**
 	 * Set the username and password for authenication with the remote server.
 	 * 
-	 * @param username
-	 *        the username
-	 * @param password
-	 *        the password
+	 * @param username the username
+	 * @param password the password
 	 */
 	public void setUsernameAndPassword(String username, String password) {
 		this.username = username;
@@ -169,11 +162,10 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	}
 
 	@Override
-	protected Repository createSystemRepository()
-		throws RepositoryException
-	{
+	@Deprecated
+	protected Repository createSystemRepository() throws RepositoryException {
 		HTTPRepository systemRepository = new HTTPRepository(serverURL, SystemRepository.ID);
-		systemRepository.setHttpClientSessionManager(getSesameClient());
+		systemRepository.setHttpClientSessionManager(getSharedHttpClientSessionManager());
 		systemRepository.setUsernameAndPassword(username, password);
 		systemRepository.initialize();
 		return systemRepository;
@@ -182,12 +174,10 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	/**
 	 * Gets the URL of the remote server, e.g. "http://localhost:8080/openrdf-sesame/".
 	 * 
-	 * @throws MalformedURLException
-	 *         If serverURL cannot be parsed
+	 * @throws MalformedURLException If serverURL cannot be parsed
 	 */
-	public URL getLocation()
-		throws MalformedURLException
-	{
+	@Override
+	public URL getLocation() throws MalformedURLException {
 		return new URL(serverURL);
 	}
 
@@ -201,49 +191,45 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	/**
 	 * Creates and initializes the repository with the specified ID.
 	 * 
-	 * @param id
-	 *        A repository ID.
+	 * @param id A repository ID.
 	 * @return The created repository, or <tt>null</tt> if no such repository exists.
-	 * @throws RepositoryConfigException
-	 *         If no repository could be created due to invalid or incomplete configuration data.
+	 * @throws RepositoryConfigException If no repository could be created due to invalid or incomplete configuration
+	 *                                   data.
 	 */
 	@Override
-	protected Repository createRepository(String id)
-		throws RepositoryConfigException, RepositoryException
-	{
+	protected Repository createRepository(String id) throws RepositoryConfigException, RepositoryException {
 		HTTPRepository result = null;
 
-		if (RepositoryConfigUtil.hasRepositoryConfig(getSystemRepository(), id)) {
+		if (hasRepositoryConfig(id)) {
 			result = new HTTPRepository(serverURL, id);
-			result.setHttpClientSessionManager(getSesameClient());
+			result.setHttpClientSessionManager(getSharedHttpClientSessionManager());
 			result.setUsernameAndPassword(username, password);
-			result.initialize();
+			result.init();
 		}
 
 		return result;
 	}
 
 	@Override
-	public RepositoryInfo getRepositoryInfo(String id)
-		throws RepositoryException
-	{
-		for (RepositoryInfo repInfo : getAllRepositoryInfos()) {
-			if (repInfo.getId().equals(id)) {
-				return repInfo;
-			}
+	public RepositoryConfig getRepositoryConfig(String id) throws RepositoryException {
+		Model model = getModelFactory().createEmptyModel();
+		try (RDF4JProtocolSession httpClient = getSharedHttpClientSessionManager()
+				.createRDF4JProtocolSession(serverURL)) {
+			httpClient.setUsernameAndPassword(username, password);
+			httpClient.setRepository(Protocol.getRepositoryLocation(serverURL, SystemRepository.ID));
+			httpClient.getStatements(null, null, null, true, new StatementCollector(model));
+		} catch (IOException | QueryEvaluationException | UnauthorizedException ue) {
+			throw new RepositoryException(ue);
 		}
-
-		return null;
+		return RepositoryConfigUtil.getRepositoryConfig(model, id);
 	}
 
 	@Override
-	public Collection<RepositoryInfo> getAllRepositoryInfos(boolean skipSystemRepo)
-		throws RepositoryException
-	{
-		List<RepositoryInfo> result = new ArrayList<RepositoryInfo>();
+	public Collection<RepositoryInfo> getAllRepositoryInfos(boolean skipSystemRepo) throws RepositoryException {
+		List<RepositoryInfo> result = new ArrayList<>();
 
-		try {
-			RDF4JProtocolSession httpClient = getSesameClient().createRDF4JProtocolSession(serverURL);
+		try (RDF4JProtocolSession httpClient = getSharedHttpClientSessionManager()
+				.createRDF4JProtocolSession(serverURL)) {
 			httpClient.setUsernameAndPassword(username, password);
 			TupleQueryResult responseFromServer = httpClient.getRepositoryList();
 			while (responseFromServer.hasNext()) {
@@ -264,8 +250,7 @@ public class RemoteRepositoryManager extends RepositoryManager {
 				if (uri instanceof IRI) {
 					try {
 						repInfo.setLocation(new URL(uri.toString()));
-					}
-					catch (MalformedURLException e) {
+					} catch (MalformedURLException e) {
 						logger.warn("Server reported malformed repository URL: {}", uri);
 					}
 				}
@@ -277,20 +262,16 @@ public class RemoteRepositoryManager extends RepositoryManager {
 
 				result.add(repInfo);
 			}
-		}
-		catch (IOException ioe) {
+		} catch (IOException ioe) {
 			logger.warn("Unable to retrieve list of repositories", ioe);
 			throw new RepositoryException(ioe);
-		}
-		catch (QueryEvaluationException qee) {
+		} catch (QueryEvaluationException qee) {
 			logger.warn("Unable to retrieve list of repositories", qee);
 			throw new RepositoryException(qee);
-		}
-		catch (UnauthorizedException ue) {
+		} catch (UnauthorizedException ue) {
 			logger.warn("Not authorized to retrieve list of repositories", ue);
 			throw new RepositoryException(ue);
-		}
-		catch (RepositoryException re) {
+		} catch (RepositoryException re) {
 			logger.warn("Unable to retrieve list of repositories", re);
 			throw re;
 		}
@@ -299,32 +280,48 @@ public class RemoteRepositoryManager extends RepositoryManager {
 	}
 
 	@Override
-	public boolean removeRepository(String repositoryID)
-		throws RepositoryException, RepositoryConfigException
-	{
-
-		boolean existingRepo = RepositoryConfigUtil.hasRepositoryConfig(getSystemRepository(), repositoryID);
-
-		if (existingRepo) {
-			RDF4JProtocolSession httpClient = getSesameClient().createRDF4JProtocolSession(serverURL);
+	public void addRepositoryConfig(RepositoryConfig config) throws RepositoryException, RepositoryConfigException {
+		try (RDF4JProtocolSession httpClient = getSharedHttpClientSessionManager()
+				.createRDF4JProtocolSession(serverURL)) {
 			httpClient.setUsernameAndPassword(username, password);
 
-			try {
-				httpClient.deleteRepository(repositoryID);
+			int serverProtocolVersion = Integer.parseInt(httpClient.getServerProtocol());
+			if (serverProtocolVersion < 9) { // explicit PUT create operation was introduced in Protocol version 9
+				String baseURI = Protocol.getRepositoryLocation(serverURL, config.getID());
+				Resource ctx = SimpleValueFactory.getInstance().createIRI(baseURI + "#" + config.getID());
+				httpClient.setRepository(Protocol.getRepositoryLocation(serverURL, SystemRepository.ID));
+				Model model = getModelFactory().createEmptyModel();
+				config.export(model, ctx);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				Rio.write(model, baos, httpClient.getPreferredRDFFormat());
+				removeRepository(config.getID());
+				try (InputStream contents = new ByteArrayInputStream(baos.toByteArray())) {
+					httpClient.upload(contents, baseURI, httpClient.getPreferredRDFFormat(), false, true, ctx);
+				}
+			} else {
+				httpClient.createRepository(config);
 			}
-			catch (IOException e) {
+		} catch (IOException | QueryEvaluationException | UnauthorizedException | NumberFormatException e) {
+			throw new RepositoryException(e);
+		}
+	}
+
+	@Override
+	public boolean removeRepository(String repositoryID) throws RepositoryException, RepositoryConfigException {
+
+		boolean existingRepo = hasRepositoryConfig(repositoryID);
+
+		if (existingRepo) {
+			try (RDF4JProtocolSession httpClient = getSharedHttpClientSessionManager()
+					.createRDF4JProtocolSession(serverURL)) {
+				httpClient.setUsernameAndPassword(username, password);
+				httpClient.deleteRepository(repositoryID);
+			} catch (IOException e) {
 				logger.warn("error while deleting remote repository", e);
 				throw new RepositoryConfigException(e);
 			}
 		}
 
 		return existingRepo;
-	}
-
-	@Override
-	protected void cleanUpRepository(String repositoryID)
-		throws IOException
-
-	{
 	}
 }

@@ -12,10 +12,7 @@ import java.io.IOException;
 
 import org.eclipse.rdf4j.RDF4JException;
 import org.eclipse.rdf4j.common.io.FileUtil;
-import org.eclipse.rdf4j.repository.Repository;
-import org.eclipse.rdf4j.repository.RepositoryConnection;
 import org.eclipse.rdf4j.repository.config.RepositoryFactory;
-import org.eclipse.rdf4j.repository.config.RepositoryImplConfig;
 import org.eclipse.rdf4j.repository.optimistic.DeadLockTest;
 import org.eclipse.rdf4j.repository.optimistic.DeleteInsertTest;
 import org.eclipse.rdf4j.repository.optimistic.LinearTest;
@@ -25,9 +22,6 @@ import org.eclipse.rdf4j.repository.optimistic.RemoveIsolationTest;
 import org.eclipse.rdf4j.repository.optimistic.SailIsolationLevelTest;
 import org.eclipse.rdf4j.repository.optimistic.SerializableTest;
 import org.eclipse.rdf4j.repository.optimistic.SnapshotTest;
-import org.eclipse.rdf4j.repository.sail.config.SailRepositoryConfig;
-import org.eclipse.rdf4j.repository.sail.config.SailRepositoryFactory;
-import org.eclipse.rdf4j.sail.config.SailFactory;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -37,22 +31,13 @@ import org.junit.runners.Suite.SuiteClasses;
  * @author James Leigh
  */
 @RunWith(Suite.class)
-@SuiteClasses({
-		DeadLockTest.class,
-		DeleteInsertTest.class,
-		LinearTest.class,
-		ModificationTest.class,
-		RemoveIsolationTest.class,
-		SailIsolationLevelTest.class,
-		MonotonicTest.class,
-		SnapshotTest.class,
+@SuiteClasses({ DeadLockTest.class, DeleteInsertTest.class, LinearTest.class, ModificationTest.class,
+		RemoveIsolationTest.class, SailIsolationLevelTest.class, MonotonicTest.class, SnapshotTest.class,
 		SerializableTest.class })
 public abstract class OptimisticIsolationTest {
 
 	@BeforeClass
-	public static void setUpClass()
-		throws Exception
-	{
+	public static void setUpClass() throws Exception {
 		System.setProperty("org.eclipse.rdf4j.repository.debug", "true");
 	}
 
@@ -60,9 +45,7 @@ public abstract class OptimisticIsolationTest {
 
 	private static File dataDir;
 
-	public static void setRepositoryFactory(RepositoryFactory factory)
-		throws IOException
-	{
+	public static void setRepositoryFactory(RepositoryFactory factory) throws IOException {
 		if (dataDir != null && dataDir.isDirectory()) {
 			FileUtil.deleteDir(dataDir);
 			dataDir = null;
@@ -70,21 +53,7 @@ public abstract class OptimisticIsolationTest {
 		OptimisticIsolationTest.factory = factory;
 	}
 
-	public static void setSailFactory(final SailFactory factory)
-		throws IOException
-	{
-		setRepositoryFactory(new SailRepositoryFactory() {
-
-			@Override
-			public RepositoryImplConfig getConfig() {
-				return new SailRepositoryConfig(factory.getConfig());
-			}
-		});
-	}
-
-	public static Repository getEmptyInitializedRepository(Class<?> caller)
-		throws RDF4JException, IOException
-	{
+	public static Repository getEmptyInitializedRepository(Class<?> caller) throws RDF4JException, IOException {
 		if (dataDir != null && dataDir.isDirectory()) {
 			FileUtil.deleteDir(dataDir);
 			dataDir = null;
@@ -97,8 +66,7 @@ public abstract class OptimisticIsolationTest {
 		try {
 			con.clear();
 			con.clearNamespaces();
-		}
-		finally {
+		} finally {
 			con.close();
 		}
 		return repository;

@@ -190,7 +190,7 @@ public class ModelsTest {
 		assertTrue(result.equals(lit) || result.equals(foo));
 	}
 
-	public void testObjectURI() {
+	public void testObjectIRI() {
 		Literal lit = VF.createLiteral(1.0);
 		model1.add(foo, bar, lit);
 		model1.add(foo, bar, foo);
@@ -347,16 +347,14 @@ public class ModelsTest {
 		try {
 			Models.getProperty(model1, foo, null).orElse(null);
 			fail("should have resulted in exception");
-		}
-		catch (NullPointerException e) {
+		} catch (NullPointerException e) {
 			// expected
 		}
 
 		try {
 			Models.getProperty(model1, null, bar).orElse(null);
 			fail("should have resulted in exception");
-		}
-		catch (NullPointerException e) {
+		} catch (NullPointerException e) {
 			// expected
 		}
 	}
