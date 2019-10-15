@@ -11,6 +11,7 @@
 	
 	<artifactId>rdf4j-runtime-osgi</artifactId>
 	<packaging>bundle</packaging>
+	<version>3.0.102-SNAPSHOT</version>
 
 	<name>RDF4J: Runtime - OSGi</name>
 	<description>OSGi Runtime dependencies for an RDF4J application</description>
